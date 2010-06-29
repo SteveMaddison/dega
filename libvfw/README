@@ -1,0 +1,114 @@
+libvfw
+------
+
+This library provides an easy-to-use programmatic interface to the
+Video for Windows API.
+
+Requirements
+------------
+
+* A recent version of Windows.  Tested on Windows XP.
+
+API
+---
+
+The libvfw.h file provides the following API:
+
+void VFWOptionsInit(VFWOptions *opts, VFW *vfw);
+
+Initialises the given VFWOptions structure.  This function expects
+the following fields to be filled in the supplied VFW structure:
+
+int width, height; /* Width and height of the video data in pixels */
+int channels, rate, samplesize; /* Audio parameters: no. of channels, 
+                                   sample rate (Hz), sample size (bytes) */
+
+int VFWOptionsChooseAudioCodec(VFWOptions *opts);
+
+Prompts the user to choose an audio codec.  To specify a parent window
+for the prompt dialog box fill in the parent field of the VFWOptions
+structure.
+
+int VFWOptionsChooseVideoCodec(VFWOptions *opts);
+
+Prompts the user to choose an audio codec.  To specify a parent window
+for the prompt dialog box fill in the parent field of the VFWOptions
+structure.
+
+void VFWOpen(VFW *enc);
+
+Initialises the VfW output stream.  This function must be called
+before supplying any audio or video data.  This function expects the
+following fields to be filled in the supplied Mencoder structure:
+
+int width, height; /* Width and height of the video data in pixels */
+double fps; /* Frames per second */
+int channels, rate, samplesize; /* Audio parameters: no. of channels, 
+                                   sample rate (Hz), sample size (bytes) */
+VFWOptions *opts; /* Audio and video codec options.  The VFWOptionsChooseAudioCodec
+                     and VFWOptionsChooseVideoCodec functions must both have
+                     been successfully called at least once on this VFWOptions object. */
+char *output;  /* Name of the output file */
+
+int VFWAudioBufSize(VFW *enc);
+
+Returns the expected size in bytes of the data buffer passed to the
+VFWAudioData function.
+
+int VFWVideoBufSize(VFW *enc);
+
+Returns the expected size in bytes of the data buffer passed to the
+VFWVideoData function.
+
+void VFWAudioData(VFW *enc, void *data);
+
+Supply the audio data for a single frame.  The data must be in
+uncompressed PCM format as specified by the channels, rate and
+samplesize fields of the Mencoder structure, and must be of length
+1/fps seconds.
+
+void VFWVideoData(VFW *enc, void *data);
+
+Supply the video data for a single frame.  The data must be in BGR24
+format with a width and height specified by the width and height
+fields of the Mencoder structure.  The rows must be in a bottom-up
+orientation.
+
+int VFWClose(VFW *enc);
+
+Call this function after all video and audio data has been supplied.
+
+Example
+-------
+
+The file example.c contains an example generating a simple test pattern.
+
+License
+-------
+
+Copyright (c) 2009 Peter Collingbourne
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions
+are met:
+1. Redistributions of source code must retain the above copyright
+   notice, this list of conditions and the following disclaimer.
+2. Redistributions in binary form must reproduce the above copyright
+   notice, this list of conditions and the following disclaimer in the
+   documentation and/or other materials provided with the distribution.
+3. Neither the names of the copyright holders nor the names of its
+   contributors may be used to endorse or promote products derived
+   from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR
+CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.

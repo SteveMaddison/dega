@@ -1,0 +1,381 @@
+//Microsoft Developer Studio generated resource script.
+//
+#include "resource.h"
+
+#define APSTUDIO_READONLY_SYMBOLS
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 2 resource.
+//
+#include "afxres.h"
+
+/////////////////////////////////////////////////////////////////////////////
+#undef APSTUDIO_READONLY_SYMBOLS
+
+/////////////////////////////////////////////////////////////////////////////
+// English (U.K.) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENG)
+#ifdef _WIN32
+LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_UK
+#pragma code_page(1252)
+#endif //_WIN32
+
+#ifdef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// TEXTINCLUDE
+//
+
+1 TEXTINCLUDE DISCARDABLE 
+BEGIN
+    "resource.h\0"
+END
+
+2 TEXTINCLUDE DISCARDABLE 
+BEGIN
+    "#include ""afxres.h""\r\n"
+    "\0"
+END
+
+3 TEXTINCLUDE DISCARDABLE 
+BEGIN
+    "\r\n"
+    "\0"
+END
+
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Menu
+//
+
+IDR_MENU1 MENU DISCARDABLE 
+BEGIN
+    POPUP "&File"
+    BEGIN
+        MENUITEM "Load Rom",                    ID_FILE_LOADROM
+        MENUITEM SEPARATOR
+        MENUITEM "Reset\tAlt+R",                ID_FILE_RESET
+        MENUITEM "Close Rom",                   ID_FILE_FREEROM
+        MENUITEM SEPARATOR
+        MENUITEM "Screenshot\tF12",             ID_OPTIONS_SCREENSHOT
+        MENUITEM SEPARATOR
+        MENUITEM "Exit",                        ID_FILE_EXIT
+    END
+    POPUP "&Emulation"
+    BEGIN
+        MENUITEM "Pause",                   ID_SETUP_PAUSE
+//      MENUITEM "One Frame",                   ID_SETUP_ONEFRAME
+        MENUITEM SEPARATOR
+        MENUITEM "Speed Up",                    ID_SETUP_SPEEDUP
+        MENUITEM "Slow Down",                   ID_SETUP_SLOWDOWN
+        MENUITEM "Normal Speed",                ID_SETUP_NORMALSPEED
+    END
+    POPUP "&State"
+    BEGIN
+        MENUITEM "Load State",                  ID_STATE_LOADSTATE
+        MENUITEM "Save State",                  ID_STATE_SAVESTATE
+        MENUITEM "Auto load/save",              ID_STATE_AUTOLOADSAVE
+        MENUITEM SEPARATOR
+        MENUITEM "Quick Save",                  ID_STATE_QUICKSAVE
+        MENUITEM "Quick Load",                  ID_STATE_QUICKLOAD
+	POPUP "Quick Save Slot"
+	BEGIN
+	    MENUITEM "0",                          ID_STATE_SLOT(0)
+	    MENUITEM "1",                          ID_STATE_SLOT(1)
+	    MENUITEM "2",                          ID_STATE_SLOT(2)
+	    MENUITEM "3",                          ID_STATE_SLOT(3)
+	    MENUITEM "4",                          ID_STATE_SLOT(4)
+	    MENUITEM "5",                          ID_STATE_SLOT(5)
+	    MENUITEM "6",                          ID_STATE_SLOT(6)
+	    MENUITEM "7",                          ID_STATE_SLOT(7)
+	    MENUITEM "8",                          ID_STATE_SLOT(8)
+	    MENUITEM "9",                          ID_STATE_SLOT(9)
+	END
+        MENUITEM SEPARATOR
+        MENUITEM "Import Meka",                 ID_STATE_IMPORT
+        MENUITEM "Export Meka",                 ID_STATE_EXPORT
+    END
+    POPUP "&Movie"
+    BEGIN
+        MENUITEM "Start Recording",                 ID_VIDEO_RECORD
+        MENUITEM "Start Playback",                  ID_VIDEO_PLAYBACK
+	MENUITEM "Stop Recording/Playback",         ID_VIDEO_STOP
+	MENUITEM "Read-only Mode",                  ID_VIDEO_READONLY
+	MENUITEM SEPARATOR
+	MENUITEM "Properties",                      ID_VIDEO_PROPERTIES
+    END
+    POPUP "&Config"
+    BEGIN
+        MENUITEM "Keyboard Input",                    ID_INPUT_KEYBOARD
+        MENUITEM "Joystick Input",                    ID_INPUT_JOYSTICK
+	MENUITEM SEPARATOR
+        MENUITEM "Key Mappings",                ID_INPUT_KEYMAPPING
+	MENUITEM SEPARATOR
+        POPUP "Status Bar"
+        BEGIN
+            MENUITEM "Hide",                      ID_SETUP_STATUSHIDE
+            MENUITEM "Auto",                      ID_SETUP_STATUSAUTO
+            MENUITEM "Show",                      ID_SETUP_STATUSSHOW
+        END
+        MENUITEM "Auto-Hide Menu Bar",            ID_SETUP_MENUHIDEONLOAD
+    END
+    POPUP "&Graphics"
+    BEGIN
+        MENUITEM "PAL",                         ID_SETUP_PAL
+        MENUITEM "Japan",                       ID_SETUP_JAPAN
+        MENUITEM "FM Chip",                     ID_SETUP_FMCHIP
+        MENUITEM SEPARATOR
+        POPUP "Scale"
+        BEGIN
+            MENUITEM "1x",                      ID_SETUP_SCALE_1X
+            MENUITEM "2x",                      ID_SETUP_SCALE_2X
+            MENUITEM "3x",                      ID_SETUP_SCALE_3X
+            MENUITEM "4x",                      ID_SETUP_SCALE_4X
+        END
+        POPUP "Overlay"
+        BEGIN
+            MENUITEM "None",                        ID_SETUP_OVERLAY_NONE
+            MENUITEM "YUV",                         ID_SETUP_OVERLAY_YUV
+            MENUITEM "RGB",                         ID_SETUP_OVERLAY_RGB
+        END
+        MENUITEM "Fullscreen\tAlt+Enter",       ID_SETUP_FULLSCREEN
+        MENUITEM "Red/Blue 3D",                 ID_SETUP_REDBLUE3D
+        MENUITEM SEPARATOR
+	MENUITEM "Show Button States",          ID_INPUT_BUTTONS
+	MENUITEM "Show Movie Frame Counter",    ID_VIDEO_FRAMECOUNTER
+    END
+    POPUP "S&ound"
+    BEGIN
+        MENUITEM "Enhance PSG",                 ID_SOUND_ENHANCEPSG
+        POPUP "Quality"
+        BEGIN
+            MENUITEM "Off",                         ID_SOUND_QUALITY_OFF
+            MENUITEM "12000hz",                     ID_SOUND_QUALITY_12000HZ
+            MENUITEM "44100hz",                     ID_SOUND_QUALITY_44100HZ
+        END
+        POPUP "VGM Log"
+        BEGIN
+            MENUITEM "Start",                       ID_SOUND_VGMLOG_START
+            MENUITEM "Stop",                        ID_SOUND_VGMLOG_STOP
+            MENUITEM "Sample accurate",             ID_SOUND_VGMLOG_SAMPLEACCURATE
+
+        END
+    END
+    POPUP "&Python"
+    BEGIN
+        MENUITEM "Memory viewer/trainer",     ID_PYTHON_MEMORY
+	MENUITEM SEPARATOR
+        MENUITEM "Load control script...",           ID_PYTHON_LOAD
+        MENUITEM "Load viewer script...",            ID_PYTHON_LOAD_THREAD
+    END
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Icon
+//
+
+// Icon with lowest ID value placed first to ensure application icon
+// remains consistent on all systems.
+IDI_ICON1               ICON    DISCARDABLE     "icon1.ico"
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Accelerator
+//
+
+IDR_ACCELERATOR1 ACCELERATORS DISCARDABLE 
+BEGIN
+//    "O",            ID_SETUP_ONEFRAME,      VIRTKEY, NOINVERT
+//    "O",            ID_SETUP_ONEFRAME,      VIRTKEY, ALT, NOINVERT
+//    "O",            ID_SETUP_ONEFRAME,      VIRTKEY, CONTROL, ALT, NOINVERT
+//    "P",            ID_SETUP_PAUSE,         VIRTKEY, NOINVERT
+//    "P",            ID_SETUP_PAUSE,         VIRTKEY, ALT, NOINVERT
+//    "P",            ID_SETUP_PAUSE,         VIRTKEY, CONTROL, ALT, NOINVERT
+    "R",            ID_FILE_RESET,          VIRTKEY, ALT, NOINVERT
+    VK_F12,         ID_OPTIONS_SCREENSHOT,  VIRTKEY, NOINVERT
+//    VK_PAUSE,       ID_SETUP_PAUSE,         VIRTKEY, NOINVERT
+    VK_RETURN,      ID_SETUP_FULLSCREEN,    VIRTKEY, ALT, NOINVERT
+    VK_RETURN,      ID_SETUP_FULLSCREEN,    VIRTKEY, CONTROL, ALT, NOINVERT
+END
+
+
+// "Movie properties" dialog
+
+IDD_MOVIEPROPERTIES DIALOGEX 10, 10, 250, 95
+STYLE WS_POPUP | WS_BORDER | DS_SHELLFONT
+CAPTION "Movie Properties"
+FONT 8, "MS Shell Dlg"
+BEGIN
+  LTEXT "Frame count:", 0, 10, 10, 100, 10
+  RTEXT "", IDT_MP_FRAMECOUNT, 150, 10, 90, 10
+
+  LTEXT "Rerecord count:", 0, 10, 30, 100, 10
+  RTEXT "", IDT_MP_RERECORDCOUNT, 150, 30, 90, 10
+
+  LTEXT "Author:", 0, 10, 50, 100, 10
+  EDITTEXT IDT_MP_AUTHOR, 100, 48, 140, 14
+
+  PUSHBUTTON "OK", IDOK, 70, 70, 50, 15
+  PUSHBUTTON "Cancel", IDCANCEL, 130, 70, 50, 15
+END
+
+// "Hotkey mapping" dialog
+
+IDD_HOTKEYMAP DIALOGEX 10, 10, 660, 325
+STYLE WS_POPUP | WS_BORDER | DS_SHELLFONT
+CAPTION "Hotkey Mapping"
+FONT 8, "MS Shell Dlg"
+BEGIN
+  CTEXT "Normal:", 0, 10, 10, 120, 10
+  KMAP_DIALOG_RES("P1 1", KMAP_1, 10, 30)
+  KMAP_DIALOG_RES("P1 2", KMAP_2, 10, 50)
+  KMAP_DIALOG_RES("P1 Up", KMAP_UP, 10, 70)
+  KMAP_DIALOG_RES("P1 Down", KMAP_DOWN, 10, 90)
+  KMAP_DIALOG_RES("P1 Left", KMAP_LEFT, 10, 110)
+  KMAP_DIALOG_RES("P1 Right", KMAP_RIGHT, 10, 130)
+  KMAP_DIALOG_RES("P1 START", KMAP_START, 10, 150)
+
+  CTEXT "Autofire:", 0, 140, 10, 120, 10
+  KMAP_DIALOG_RES("P1 1", KMAP_AUTO_1, 140, 30)
+  KMAP_DIALOG_RES("P1 2", KMAP_AUTO_2, 140, 50)
+  KMAP_DIALOG_RES("P1 Up", KMAP_AUTO_UP, 140, 70)
+  KMAP_DIALOG_RES("P1 Down", KMAP_AUTO_DOWN, 140, 90)
+  KMAP_DIALOG_RES("P1 Left", KMAP_AUTO_LEFT, 140, 110)
+  KMAP_DIALOG_RES("P1 Right", KMAP_AUTO_RIGHT, 140, 130)
+  KMAP_DIALOG_RES("P1 START", KMAP_AUTO_START, 140, 150)
+
+  CTEXT "Autohold:", 0, 270, 10, 120, 10
+  KMAP_DIALOG_RES("P1 1", KMAP_HOLD_1, 270, 30)
+  KMAP_DIALOG_RES("P1 2", KMAP_HOLD_2, 270, 50)
+  KMAP_DIALOG_RES("P1 Up", KMAP_HOLD_UP, 270, 70)
+  KMAP_DIALOG_RES("P1 Down", KMAP_HOLD_DOWN, 270, 90)
+  KMAP_DIALOG_RES("P1 Left", KMAP_HOLD_LEFT, 270, 110)
+  KMAP_DIALOG_RES("P1 Right", KMAP_HOLD_RIGHT, 270, 130)
+  KMAP_DIALOG_RES("P1 START", KMAP_HOLD_START, 270, 150)
+
+  KMAP_DIALOG_RES("P2 1", KMAP_P2_1, 10, 180)
+  KMAP_DIALOG_RES("P2 2", KMAP_P2_2, 10, 200)
+  KMAP_DIALOG_RES("P2 Up", KMAP_P2_UP, 10, 220)
+  KMAP_DIALOG_RES("P2 Down", KMAP_P2_DOWN, 10, 240)
+  KMAP_DIALOG_RES("P2 Left", KMAP_P2_LEFT, 10, 260)
+  KMAP_DIALOG_RES("P2 Right", KMAP_P2_RIGHT, 10, 280)
+
+  KMAP_DIALOG_RES("P2 1", KMAP_P2_AUTO_1, 140, 180)
+  KMAP_DIALOG_RES("P2 2", KMAP_P2_AUTO_2, 140, 200)
+  KMAP_DIALOG_RES("P2 Up", KMAP_P2_AUTO_UP, 140, 220)
+  KMAP_DIALOG_RES("P2 Down", KMAP_P2_AUTO_DOWN, 140, 240)
+  KMAP_DIALOG_RES("P2 Left", KMAP_P2_AUTO_LEFT, 140, 260)
+  KMAP_DIALOG_RES("P2 Right", KMAP_P2_AUTO_RIGHT, 140, 280)
+
+  KMAP_DIALOG_RES("P2 1", KMAP_P2_HOLD_1, 270, 180)
+  KMAP_DIALOG_RES("P2 2", KMAP_P2_HOLD_2, 270, 200)
+  KMAP_DIALOG_RES("P2 Up", KMAP_P2_HOLD_UP, 270, 220)
+  KMAP_DIALOG_RES("P2 Down", KMAP_P2_HOLD_DOWN, 270, 240)
+  KMAP_DIALOG_RES("P2 Left", KMAP_P2_HOLD_LEFT, 270, 260)
+  KMAP_DIALOG_RES("P2 Right", KMAP_P2_HOLD_RIGHT, 270, 280)
+
+  KMAP_DIALOG_RES("Pause", KMAP_PAUSE, 400, 10)
+  KMAP_DIALOG_RES("Frame Adv", KMAP_FRAMEADVANCE, 400, 30)
+  KMAP_DIALOG_RES("Quick Load", KMAP_QUICKLOAD, 400, 50)
+  KMAP_DIALOG_RES("Quick Save", KMAP_QUICKSAVE, 400, 70)
+  KMAP_DIALOG_RES("Speed Up", KMAP_SPEEDUP, 400, 90)
+  KMAP_DIALOG_RES("Slow Down", KMAP_SLOWDOWN, 400, 110)
+  KMAP_DIALOG_RES("Fast Forward", KMAP_FASTFORWARD, 400, 130)
+  KMAP_DIALOG_RES("Normal Speed", KMAP_NORMALSPEED, 400, 150)
+  KMAP_DIALOG_RES("Readonly Tgl", KMAP_READONLY, 400, 170)
+  KMAP_DIALOG_RES("Btn State Tgl", KMAP_BUTTONSTATE, 400, 190)
+  KMAP_DIALOG_RES("Frame Ctr Tgl", KMAP_FRAMECOUNTER, 400, 210)
+
+  KMAP_DIALOG_RES("Save Slot 0", KMAP_SAVESLOT(0), 530, 10)
+  KMAP_DIALOG_RES("Save Slot 1", KMAP_SAVESLOT(1), 530, 30)
+  KMAP_DIALOG_RES("Save Slot 2", KMAP_SAVESLOT(2), 530, 50)
+  KMAP_DIALOG_RES("Save Slot 3", KMAP_SAVESLOT(3), 530, 70)
+  KMAP_DIALOG_RES("Save Slot 4", KMAP_SAVESLOT(4), 530, 90)
+  KMAP_DIALOG_RES("Save Slot 5", KMAP_SAVESLOT(5), 530, 110)
+  KMAP_DIALOG_RES("Save Slot 6", KMAP_SAVESLOT(6), 530, 130)
+  KMAP_DIALOG_RES("Save Slot 7", KMAP_SAVESLOT(7), 530, 150)
+  KMAP_DIALOG_RES("Save Slot 8", KMAP_SAVESLOT(8), 530, 170)
+  KMAP_DIALOG_RES("Save Slot 9", KMAP_SAVESLOT(9), 530, 190)
+
+  PUSHBUTTON "OK", IDOK, 275, 300, 50, 15
+  PUSHBUTTON "Cancel", IDCANCEL, 335, 300, 50, 15
+
+END
+
+// "Begin recording" file information
+
+IDD_RECORD_INFO DIALOGEX 0, 0, 250, 50
+STYLE WS_CHILD|WS_CLIPSIBLINGS|DS_3DLOOK|DS_CONTROL|DS_SHELLFONT
+CAPTION "Record Info"
+FONT 8, "MS Shell Dlg"
+BEGIN
+  LTEXT "Author:", 0, 10, 10, 100, 10
+  EDITTEXT IDT_RI_AUTHOR, 100, 8, 140, 14
+
+  CHECKBOX "From reset", IDT_RI_RESET, 10, 30, 100, 10
+//  LTEXT "Wibble", IDT_RI_FILENAME, 5, 5, 190, 10
+END
+
+IDD_PLAYBACK_INFO DIALOGEX 0, 0, 250, 120
+STYLE WS_CHILD|WS_CLIPSIBLINGS|DS_3DLOOK|DS_CONTROL|DS_SHELLFONT
+CAPTION "Playback Info"
+FONT 8, "MS Shell Dlg"
+BEGIN
+  LTEXT "Recorded with:", 0, 10, 10, 100, 10
+  LTEXT "", IDT_PI_MASTVER, 100, 10, 90, 10
+
+  LTEXT "Frame count:", 0, 10, 20, 100, 10
+  RTEXT "", IDT_PI_FRAMECOUNT, 150, 20, 90, 10
+
+  LTEXT "Rerecord count:", 0, 10, 30, 100, 10
+  RTEXT "", IDT_PI_RERECORDCOUNT, 150, 30, 90, 10
+
+  LTEXT "Author:", 0, 10, 40, 100, 10
+  LTEXT "", IDT_PI_AUTHOR, 100, 40, 140, 10
+
+  LTEXT "From reset:", 0, 10, 50, 100, 10
+  LTEXT "", IDT_PI_RESET, 100, 50, 30, 10
+
+  LTEXT "PAL:", 0, 10, 60, 40, 10
+  LTEXT "", IDT_PI_PAL, 40, 60, 20, 10
+
+  LTEXT "Japan:", 0, 80, 60, 40, 10
+  LTEXT "", IDT_PI_JAPAN, 120, 60, 20, 10
+
+  LTEXT "Game Gear:", 0, 150, 60, 60, 10
+  LTEXT "", IDT_PI_GG, 210, 60, 20, 10
+  
+  LTEXT "Current ROM name:", 0, 10, 75, 100, 10
+  LTEXT "", IDT_PI_ROM, 100, 75, 140, 10
+
+  LTEXT "Movie ROM name:", 0, 10, 85, 100, 10
+  LTEXT "", IDT_PI_MOVIE_ROM, 100, 85, 140, 10
+  
+  LTEXT "Current ROM checksum:", 0, 10, 95, 100, 10
+  LTEXT "", IDT_PI_DIGEST, 100, 95, 140, 10
+
+  LTEXT "Movie ROM checksum:", 0, 10, 105, 100, 10
+  LTEXT "", IDT_PI_MOVIE_DIGEST, 100, 105, 140, 10
+END 
+
+#endif    // English (U.K.) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+
+#ifndef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 3 resource.
+//
+
+
+/////////////////////////////////////////////////////////////////////////////
+#endif    // not APSTUDIO_INVOKED
+

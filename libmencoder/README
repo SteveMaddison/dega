@@ -1,0 +1,101 @@
+libmencoder
+-----------
+
+This library provides an easy-to-use programmatic interface to the
+mencoder movie encoding tool.
+
+Requirements
+------------
+
+* C99/POSIX compliant system. Unfortunately Cygwin fails to meet this
+  requirement as some system calls do not operate as expected by this
+  library.
+* A compiled version of mencoder
+
+API
+---
+
+The mencoder.h file provides the following API:
+
+void MencoderOpen(Mencoder *enc);
+
+Spawns a mencoder subprocess.  This function must be called before
+supplying any audio or video data.  This function expects the following
+fields to be filled in the supplied Mencoder structure:
+
+char *mencoder; /* Specify an alternative mencoder subprocess, or
+                   "mencoder" if null */
+int width, height; /* Width and height of the video data in pixels */
+double fps; /* Frames per second */
+int channels, rate, samplesize; /* Audio parameters: no. of channels, 
+                                   sample rate (Hz), sample size (bytes) */
+char **params; /* Additional parameters to the mencoder subprocess.
+                  This must include -ovc and -oac options to specify
+                  the video and audio codecs. List terminated by null
+                  pointer */
+char *output;  /* Name of the output file */
+
+int MencoderAudioBufSize(Mencoder *enc);
+
+Returns the expected size in bytes of the data buffer passed to the
+MencoderAudioData function.
+
+int MencoderVideoBufSize(Mencoder *enc);
+
+Returns the expected size in bytes of the data buffer passed to the
+MencoderVideoData function.
+
+void MencoderAudioData(Mencoder *enc, void *data);
+
+Supply the audio data for a single frame.  The data must be in
+uncompressed PCM format as specified by the channels, rate and
+samplesize fields of the Mencoder structure, and must be of length
+1/fps seconds.
+
+void MencoderVideoData(Mencoder *enc, void *data);
+
+Supply the video data for a single frame.  The data must be in RGB24
+format with a width and height specified by the width and height
+fields of the Mencoder structure.
+
+int MencoderClose(Mencoder *enc);
+
+Call this function after all video and audio data has been supplied.
+Flushes buffers and waits for the mencoder subprocess to finish
+execution.  Returns the status information of the mencoder subprocess
+as provided by waitpid.
+
+Example
+-------
+
+The file example.c contains an example generating a simple test pattern.
+
+License
+-------
+
+Copyright (c) 2009 Peter Collingbourne
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions
+are met:
+1. Redistributions of source code must retain the above copyright
+   notice, this list of conditions and the following disclaimer.
+2. Redistributions in binary form must reproduce the above copyright
+   notice, this list of conditions and the following disclaimer in the
+   documentation and/or other materials provided with the distribution.
+3. Neither the names of the copyright holders nor the names of its
+   contributors may be used to endorse or promote products derived
+   from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR
+CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
