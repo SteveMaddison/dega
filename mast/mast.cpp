@@ -6,6 +6,8 @@
 #define MAST_CORE MAST_CORE_DOZE
 #elif defined(EMU_Z80JB)
 #define MAST_CORE MAST_CORE_Z80JB
+#elif defined(EMU_DRZ80)
+#define MAST_CORE MAST_CORE_DRZ80
 #endif
 
 unsigned int MastVer=0x1160 | MAST_CORE; // Version number of the library (lower 16 bits) and Z80 core (upper 16 bits)
@@ -36,6 +38,9 @@ int MastInit()
 #ifdef EMU_Z80JB
   MastSetMemHandlers();
   Z80Init();
+#elif defined(EMU_DRZ80)
+  MastSetMemHandlers();
+  DrZ80_Init();
 #endif
 
   return 0;
@@ -136,6 +141,9 @@ int MastReset()
 #elif defined(EMU_Z80JB)
   Z80Reset();
   Z80.sp.w.l=0xdff0; // bios sets
+#elif defined(EMU_DRZ80)
+  DrZ80_Reset();
+  drz80.Z80SP=0xdff0; // bios sets
 #endif
 
   return 0;

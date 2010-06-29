@@ -30,6 +30,8 @@ static INLINE void VidCtrlWrite(unsigned char d)
   nDozeInterrupt=-1;
 #elif defined(EMU_Z80JB)
   Z80SetIrqLine(0x38, 0);
+#elif defined(EMU_DRZ80)
+  DrZ80_Set_Irq(0x38);
 #endif
 }
 
@@ -43,6 +45,8 @@ static INLINE unsigned char VidCtrlRead()
   nDozeInterrupt=-1;
 #elif defined(EMU_Z80JB)
   Z80SetIrqLine(0x38, 0);
+#elif defined(EMU_DRZ80)
+  DrZ80_Set_Irq(0x38);
 #endif
   return d;
 }
@@ -234,6 +238,21 @@ void MastSetMemHandlers()
   Z80SetProgramWriteHandler(WriteProgHandler);
   Z80SetCPUOpReadHandler(ReadProgHandler);
   Z80SetCPUOpArgReadHandler(ReadProgHandler);
+}
+
+#elif defined(EMU_DRZ80)
+
+  unsigned char DrZ80In(unsigned short a)            { return SysIn(a); }
+  void DrZ80Out(unsigned short a, unsigned char d)   { SysOut(a,d); }
+  unsigned char DrZ80Read(unsigned short a)          { return SysRead(a); }
+  void DrZ80Write(unsigned char d, unsigned short a) { SysWrite(a,d); }
+
+void MastSetMemHandlers()
+{
+  drz80.z80_in = DrZ80In;
+  drz80.z80_out = DrZ80Out;
+  drz80.z80_read8 = DrZ80Read;
+  drz80.z80_write8 = DrZ80Write;
 }
 
 #endif

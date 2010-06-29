@@ -29,6 +29,10 @@ extern "C" {
 #include "z80.h"
 #endif
 
+#ifdef EMU_DRZ80
+#include "DrZ80Support.h"
+#endif
+
 // Include sound emu header
 #include "emu2413.h"
 
@@ -120,6 +124,8 @@ void MastMapPage2();
 // mem.cpp
 #ifdef EMU_Z80JB
 extern unsigned char *MemFetch[0x100], *MemRead[0x100], *MemWrite[0x100];
+void MastSetMemHandlers();
+#elif defined(EMU_DRZ80)
 void MastSetMemHandlers();
 #endif
 

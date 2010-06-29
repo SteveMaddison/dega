@@ -1,10 +1,16 @@
-OPTFLAGS=-O3 -fomit-frame-pointer -funroll-loops -Wall
+PREFIX=/usr/local/pandora/arm-2009q3/usr
+OPTFLAGS=-O3 -fomit-frame-pointer -funroll-loops -Wall \
+	-ffast-math -mcpu=cortex-a8 -mfpu=neon -ftree-vectorize -mfloat-abi=softfp -fsingle-precision-constant
+NOPYTHON=1
+NOVIDEO=1
+Z80=drz80
 #OPTFLAGS=-O3 -fomit-frame-pointer -funroll-loops -march=i686 -mcpu=i686
 #OPTFLAGS=-xM -O3
 
-CC=gcc
+CC=arm-none-linux-gnueabi-gcc
 #CC=icc
-CXX=g++
+CXX=arm-none-linux-gnueabi-g++
+AS=arm-none-linux-gnueabi-gcc
 #CXX=icpc
 NASM=nasm
 WINDRES=windres
@@ -26,7 +32,7 @@ else
 endif
 
 ifeq ($(P),unix)
-	CFLAGS= $(OPTFLAGS) $(shell sdl-config --cflags) -DUSE_MENCODER -Imast -Idoze -Ilibmencoder -D__cdecl= -D__fastcall=
+	CFLAGS= $(OPTFLAGS) $(shell $(PREFIX)/bin/sdl-config --cflags) -DUSE_MENCODER -Imast -Idoze -Ilibmencoder -D__cdecl= -D__fastcall=
 else ifeq ($(P),win)
 	CFLAGS= $(OPTFLAGS) -DUSE_VFW -mno-cygwin -Imast -Idoze -Imaster -Iextra -Izlib -Ilibvfw
 endif
@@ -39,16 +45,26 @@ ifeq ($(Z80),z80jb)
 	CFLAGS += -Iz80jb -DEMU_Z80JB
 	Z80OBJ = z80jb/z80.o z80jb/z80daisy.o
 else
+ifeq ($(Z80),drz80)
+	CFLAGS += -IDrZ80 -DEMU_DRZ80
+	Z80OBJ = DrZ80/DrZ80.o DrZ80/DrZ80Support.o
+else
 	CFLAGS += -Idoze -DEMU_DOZE
 	Z80OBJ = doze/doze.o doze/dozea.o
+endif
 endif
 
 CXXFLAGS= $(CFLAGS) -fno-exceptions
 
 DAMOBJ = doze/dam.o doze/dama.o doze/damc.o doze/dame.o doze/damf.o doze/damj.o doze/damm.o doze/damo.o doze/damt.o
 MASTOBJ = mast/area.o mast/dpsg.o mast/draw.o mast/emu2413.o mast/frame.o mast/load.o mast/map.o mast/mast.o mast/mem.o mast/samp.o mast/snd.o mast/vgm.o mast/video.o mast/osd.o mast/md5.o
+ifdef $(NOPYTHON)
 PYOBJ = python/pydega.o python/stdalone.o
 PYEMBOBJ = python/pydega.emb.o python/embed.emb.o
+else
+CFLAGS += -DNOPYTHON
+CXXFLAGS += -DNOPYTHON
+endif
 
 ifeq ($(P),unix)
 ifeq ($(BITS),64)
@@ -61,17 +77,19 @@ endif
 	PLATOBJ = sdl/main.o
 	PLATPYOBJ =
 	PLATPYOBJCXX =
-	EXTRA_LIBS = $(shell sdl-config --libs)
+	EXTRA_LIBS = $(shell $(PREFIX)/bin/sdl-config --libs) -lm -lts
 	DOZE_FIXUP = sed -f doze/doze.cmd.sed <doze/dozea.asm >doze/dozea.asm.new && mv doze/dozea.asm.new doze/dozea.asm
+ifndef NOVIDEO
 	ENCODER_OBJ = tools/degavi.o
 	ENCODER_LIBS = libmencoder/libmencoder.a
 	ENCODER_LDFLAGS = -lm
+endif
 	EXTRA_LDFLAGS =
 	GUI_LDFLAGS =
 	SPECS =
-	PYTHON_CFLAGS = $(shell python-config --cflags) $(CFLAGS)
-	PYTHON_CXXFLAGS = $(shell python-config --cflags) $(CXXFLAGS)
-	PYTHON_LDFLAGS = $(shell python-config --ldflags) -lm
+	PYTHON_CFLAGS = $(shell $(PREFIX)/bin/python-config --cflags) $(CFLAGS)
+	PYTHON_CXXFLAGS = $(shell $(PREFIX)/bin/python-config --cflags) $(CXXFLAGS)
+	PYTHON_LDFLAGS = $(shell $(PREFIX)/bin/python-config --ldflags) -lm
 else ifeq ($(P),win)
 	NASM_FORMAT = win32
 	EXEEXT = .exe
@@ -93,10 +111,16 @@ else ifeq ($(P),win)
 	PYTHON_LDFLAGS = -L$(PYTHON_PREFIX)/libs -lpython25
 endif
 
+ifdef NOVIDEO
+ALLOBJ = dega$(EXEEXT)
+else
 ALLOBJ = dega$(EXEEXT) mmvconv$(EXEEXT) degavi$(EXEEXT)
+endif
 
 ifneq ($(BITS),64)
+ifndef NOPYTHON
 ALLOBJ += pydega$(SOEXT)
+endif
 endif
 
 ifeq ($(P),unix)
@@ -156,6 +180,9 @@ pydega$(SOEXT): $(PYOBJ) $(Z80OBJ) $(MASTOBJ) $(SPECS)
 
 doze/dozea.o: doze/dozea.asm
 	nasm -f $(NASM_FORMAT) -o doze/dozea.o doze/dozea.asm
+
+DrZ80/DrZ80.o: DrZ80/DrZ80.s
+	$(AS) -o DrZ80/DrZ80.o -c DrZ80/DrZ80.s
 
 doze/dozea.asm: doze/dam$(EXEEXT)
 	cd doze ; $(WINE) ./dam

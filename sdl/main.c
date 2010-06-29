@@ -19,6 +19,12 @@ SDL_Surface *thescreen;
 unsigned short themap[256];
 
 int width, height;
+int hw_width = 400;
+int hw_height = 480;
+int hw_xoffset = 0;
+int hw_yoffset = 0;
+int vscale = 2;
+int hscale = 2;
 
 static int audio_len=0;
 
@@ -26,6 +32,7 @@ int framerate=60;
 int mult=0;
 
 int readonly;
+int identify = 0;
 
 int python;
 int vidflags=0;
@@ -127,13 +134,13 @@ static int StateSave(char *StateName)
 
 static void LeaveFullScreen() {
 	if (vidflags&SDL_FULLSCREEN) {
-		thescreen = SDL_SetVideoMode(width, height, 15, SDL_SWSURFACE|(vidflags&~SDL_FULLSCREEN));
+		thescreen = SDL_SetVideoMode(hw_width, hw_height, 15, SDL_SWSURFACE|(vidflags&~SDL_FULLSCREEN));
 	}
 }
 
 static void EnterFullScreen() {
 	if (vidflags&SDL_FULLSCREEN) {
-		thescreen = SDL_SetVideoMode(width, height, 15, SDL_SWSURFACE|vidflags);
+		thescreen = SDL_SetVideoMode(hw_width, hw_height, 15, SDL_SWSURFACE|vidflags);
 	}
 }
 
@@ -199,6 +206,7 @@ void HandleSetAuthor(void) {
 	EnterFullScreen();
 }
 
+#ifndef NOPYTHON
 void HandlePython(void) {
 	char buffer[64];
 	LeaveFullScreen();
@@ -250,6 +258,7 @@ void HandlePythonThread(void) {
 
 	pthread_create(&pythread, 0, PythonThreadRun, buffer);
 }
+#endif
 
 void SetRateMult() {
 	int newrate = mult>0 ? framerate<<mult : framerate>>-mult;
@@ -282,9 +291,9 @@ void MimplFrame(int input) {
                                 if(key==SDLK_DOWN) {MastInput[0]|=0x02;break;}
                                 if(key==SDLK_LEFT) {MastInput[0]|=0x04;break;}
                                 if(key==SDLK_RIGHT) {MastInput[0]|=0x08;break;}
-                                if(key==SDLK_z || key==SDLK_y) {MastInput[0]|=0x10;break;}
-                                if(key==SDLK_x) {MastInput[0]|=0x20;break;}
-                                if(key==SDLK_c) {
+                                if(key==SDLK_PAGEDOWN) {MastInput[0]|=0x10;break;}
+                                if(key==SDLK_END) {MastInput[0]|=0x20;break;}
+                                if(key==SDLK_LALT) {
 				  MastInput[0]|=0x80;
 				  if ((MastEx&MX_GG)==0)
 				    MastInput[0]|=0x40;
@@ -304,9 +313,9 @@ void MimplFrame(int input) {
                                 if(key==SDLK_DOWN) {MastInput[0]&=0xfd;break;}
                                 if(key==SDLK_LEFT) {MastInput[0]&=0xfb;break;}
                                 if(key==SDLK_RIGHT) {MastInput[0]&=0xf7;break;}
-                                if(key==SDLK_z || key==SDLK_y) {MastInput[0]&=0xef;break;}
-                                if(key==SDLK_x) {MastInput[0]&=0xdf;break;}
-                                if(key==SDLK_c) {MastInput[0]&=0x3f;break;}
+                                if(key==SDLK_PAGEDOWN) {MastInput[0]&=0xef;break;}
+                                if(key==SDLK_END) {MastInput[0]&=0xdf;break;}
+                                if(key==SDLK_LALT) {MastInput[0]&=0x3f;break;}
 
                                 if(key==SDLK_u) {MastInput[1]&=0xfe;break;}
                                 if(key==SDLK_j) {MastInput[1]&=0xfd;break;}
@@ -328,7 +337,9 @@ void MimplFrame(int input) {
 #if 0
 	pydega_cbpostframe(mainstate);
 #else
+#ifndef NOPYTHON
 	MPyEmbed_CBPostFrame();
+#endif
 #endif
 
 	if (input) {
@@ -349,6 +360,7 @@ void usage(void)
 	printf("  -s --nosound\tdisable sound\n");
 	printf("  -f --fullscreen\tfullscreen display\n");
 	printf("  -r --readonly\tmovies are readonly\n");
+	printf("  -i --identify\tidentify ROM type and exit\n");
 	printf("\n" APPNAME_LONG " version " VERSION " by Ulrich Hecht <uli@emulinks.de>\n");
 	printf("extended by Peter Collingbourne <peter@peter.uk.to>\n");
 	printf("based on Win32 version by Dave <dave@finalburn.com>\n");
@@ -363,7 +375,7 @@ int main(int argc, char** argv)
 	SDL_Event event;
 	int key;
 	SDL_AudioSpec aspec;
-	unsigned char* audiobuf;
+	unsigned char* audiobuf = NULL;
 	int paused=0, frameadvance=0;
 
 	// options
@@ -374,7 +386,9 @@ int main(int argc, char** argv)
 
 	readonly = 0;
 
+#ifndef NOPYTHON
 	MPyEmbed_SetArgv(argc, argv);
+#endif
 
 	while(1)
 	{
@@ -391,10 +405,11 @@ int main(int argc, char** argv)
 			{"nosound",no_argument,NULL,'s'},
 			{"fullscreen",no_argument,NULL,'f'},
 			{"readonly",no_argument,NULL,'r'},
+			{"identify",no_argument,NULL,'i'},
 			{0,0,0,0}
 		};
 		
-		copt=getopt_long(argc,argv,"vgmpjsfr",long_options,&option_index);
+		copt=getopt_long(argc,argv,"vgmpjsfri",long_options,&option_index);
 		if(copt==-1) break;
 		switch(copt)
 		{
@@ -437,6 +452,10 @@ int main(int argc, char** argv)
 				readonly = 1;
 				break;
 
+			case 'i':
+				identify = 1;
+				break;
+
 			case '?':
 				usage();
 				break;
@@ -461,13 +480,50 @@ int main(int argc, char** argv)
 	MastSetRom(rom,romlength);
 	if (autodetect)
 		MastFlagsFromHeader();
+		
+	if( identify ) {
+		printf("%s\n", MastEx&MX_GG ? "GG" : "SMS" );
+		SDL_Quit();
+		return 0;	
+	}
+		
 	MastHardReset();
 	memset(&MastInput,0,sizeof(MastInput));
 	
-	width=MastEx&MX_GG?160:256;
-	height=MastEx&MX_GG?144:192;
+	if( MastEx&MX_GG ) {
+		width = 160;
+		height = 144;
+		hw_width = 160;
+		hw_height = 144;
+	}
+	else {
+		width = 256;
+		height = 192;	
+		hw_width = 256;
+		hw_height = 192;
+	}
+	
+	hscale = hw_width/width;
+	vscale = hw_height/height;
+	
+	/*
+	if( vscale > hscale )
+		vscale = hscale;
+	else
+		hscale = vscale;
+	
+	printf( "HW: %dx%d, Scale: %dx%d\n", hw_width, hw_height, hscale, vscale );
+	*/
 
-	thescreen=SDL_SetVideoMode(width, height, 15, SDL_SWSURFACE|vidflags);
+	hw_xoffset = (hw_width - (width * hscale)) / 2;
+	hw_yoffset = (hw_height - (height * vscale)) / 2;
+
+	thescreen=SDL_SetVideoMode(hw_width, hw_height, 15, SDL_SWSURFACE|vidflags);
+	if(thescreen==NULL) {
+		fprintf(stderr, "Couldn't set video mode: %s\n", SDL_GetError());
+		SDL_Quit();
+		return -1;
+	}
 
 	if(sound)
 	{
@@ -493,8 +549,10 @@ int main(int argc, char** argv)
 		pMsndOut=NULL;
 	}
 
+#ifndef NOPYTHON
 	MPyEmbed_Init();
 	python = MPyEmbed_Available();
+#endif
 
 	MastDrawDo=1;
 	while(!done)
@@ -505,13 +563,14 @@ int main(int argc, char** argv)
 			MastFrame();
 			scrunlock();
 
+#ifndef NOPYTHON
 #if 0
 			clock_gettime(CLOCK_REALTIME, &t1);
 			pydega_cbpostframe(mainstate);
 			clock_gettime(CLOCK_REALTIME, &t2);
 			printf("postframe took %d ns\n", t2.tv_nsec-t1.tv_nsec);
-#else
 			MPyEmbed_CBPostFrame();
+#endif
 #endif
 
 			MastInput[0]&=~0x40;
@@ -541,9 +600,9 @@ Handler:		switch (event.type)
                                 if(key==SDLK_DOWN) {MastInput[0]|=0x02;break;}
                                 if(key==SDLK_LEFT) {MastInput[0]|=0x04;break;}
                                 if(key==SDLK_RIGHT) {MastInput[0]|=0x08;break;}
-                                if(key==SDLK_z || key==SDLK_y) {MastInput[0]|=0x10;break;}
-                                if(key==SDLK_x) {MastInput[0]|=0x20;break;}
-                                if(key==SDLK_c) {
+                                if(key==SDLK_PAGEDOWN) {MastInput[0]|=0x10;break;}
+                                if(key==SDLK_END) {MastInput[0]|=0x20;break;}
+                                if(key==SDLK_LALT) {
 				  MastInput[0]|=0x80;
 				  if ((MastEx&MX_GG)==0)
 				    MastInput[0]|=0x40;
@@ -565,9 +624,11 @@ Handler:		switch (event.type)
 				if(key==SDLK_s) {HandleSaveState();break;}
 				if(key==SDLK_l) {HandleLoadState();break;}
 				if(key==SDLK_a) {HandleSetAuthor();break;}
+#ifndef NOPYTHON
 				if(key==SDLK_n) {HandlePython();break;}
 				if(key==SDLK_m) {HandlePythonREPL();break;}
 				if(key==SDLK_i) {HandlePythonThread();break;}
+#endif
 				if(key==SDLK_b) {MdrawOsdOptions^=OSD_BUTTONS;break;}
 				if(key==SDLK_f) {MdrawOsdOptions^=OSD_FRAMECOUNT;break;}
 				if(key==SDLK_EQUALS) {mult++;SetRateMult();break;}
@@ -580,9 +641,9 @@ Handler:		switch (event.type)
                                 if(key==SDLK_DOWN) {MastInput[0]&=0xfd;break;}
                                 if(key==SDLK_LEFT) {MastInput[0]&=0xfb;break;}
                                 if(key==SDLK_RIGHT) {MastInput[0]&=0xf7;break;}
-                                if(key==SDLK_z || key==SDLK_y) {MastInput[0]&=0xef;break;}
-                                if(key==SDLK_x) {MastInput[0]&=0xdf;break;}
-                                if(key==SDLK_c) {MastInput[0]&=0x3f;break;}
+                                if(key==SDLK_PAGEDOWN) {MastInput[0]&=0xef;break;}
+                                if(key==SDLK_END) {MastInput[0]&=0xdf;break;}
+                                if(key==SDLK_LALT) {MastInput[0]&=0x3f;break;}
 
                                 if(key==SDLK_u) {MastInput[1]&=0xfe;break;}
                                 if(key==SDLK_j) {MastInput[1]&=0xfd;break;}
@@ -603,16 +664,19 @@ Handler:		switch (event.type)
 			if(sound) while(audio_len>aspec.samples*aspec.channels*2*4) usleep(5);
 		}
 	}
+#ifndef NOPYTHON
 	if (python) {
 		MPyEmbed_Fini();
 	}
+#endif
 	return 0;
 }
 
 void MdrawCall()
 {
-	int i,xoff,yoff=0;
+	int i,j,k,l,xoff,yoff=0;
 	unsigned short *line;
+
 	if(Mdraw.Data[0]) printf("MdrawCall called, line %d, first pixel %d\n",Mdraw.Line,Mdraw.Data[0]);
 	if(Mdraw.PalChange)
 	{
@@ -623,12 +687,27 @@ void MdrawCall()
 			themap[i] = ((p(i)&0xf00)>>7) | ((p(i)&0xf0)<<2) | ((p(i)&0xf)<<11);
 		}
 	}
-    	if(MastEx&MX_GG) {xoff=64; yoff=24;}
-    		else	 {xoff=16; }
-    	if(Mdraw.Line-yoff<0 || Mdraw.Line-yoff>=height) return;
-	line = thescreen->pixels+(Mdraw.Line-yoff)*thescreen->pitch;
+    if(MastEx&MX_GG) {
+    	xoff=64; yoff=24;
+    }
+    else {
+    	xoff=16;
+    }
+
+   	if( Mdraw.Line-yoff<0 || Mdraw.Line-yoff>=height )
+   		return;
+   	
+   	line = (thescreen->pixels)+(Mdraw.Line-yoff)*thescreen->pitch * vscale;
+   	line += hw_width * hw_yoffset;
+
+	k = hw_xoffset;
 	for (i=0; i < width; i++) {
-		line[i] = themap[Mdraw.Data[xoff+i]];
+		for(l=0; l < hscale; l++) {
+			line[k++] = themap[Mdraw.Data[xoff+i]];
+		}
+	}
+		
+	for (j=1; j < vscale; j++) {
+		memcpy( line+(j*hw_width), line, hw_width*(sizeof(line)) );
 	}
 }
-

@@ -24,6 +24,7 @@ extern unsigned int MastVer; // Version number of the library (lower 16 bits) an
 #define MAST_VERSION_MASK 0x0000FFFF
 #define MAST_CORE_DOZE    (0 << 16)
 #define MAST_CORE_Z80JB   (1 << 16)
+#define MAST_CORE_DRZ80   (2 << 16)
 
 extern unsigned char MastInput[2]; // Joypads
 extern unsigned int MastEx; // Extra options

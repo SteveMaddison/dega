@@ -5,7 +5,7 @@
 #define MemFetch DozeMemFetch
 #define MemRead DozeMemRead
 #define MemWrite DozeMemWrite
-#elif defined(EMU_Z80JB)
+#elif defined(EMU_Z80JB) || defined(EMU_DRZ80)
 unsigned char *MemFetch[0x100], *MemRead[0x100], *MemWrite[0x100];
 #endif
 

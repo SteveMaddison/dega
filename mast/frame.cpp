@@ -12,6 +12,8 @@ static int CpuBase=0; // Value to subtract nDozeCycles from in order to get midc
 #define CyclesLeft nDozeCycles
 #elif defined(EMU_Z80JB)
 #define CyclesLeft z80_ICount
+#elif defined(EMU_DRZ80)
+int CyclesLeft = 0;
 #endif
 
 int CpuMid() // Returns how many cycles the z80 has done inside the run call
@@ -29,6 +31,8 @@ static INLINE void CpuRun(int Cycles)
   DozeRun();
 #elif defined(EMU_Z80JB)
   Z80Execute(CpuBase);
+#elif defined(EMU_DRZ80)
+  DrZ80Run(&drz80,Cycles);
 #endif
 
   Done=CpuMid(); // Find out number of cycles actually done
@@ -53,6 +57,8 @@ static void RunLine()
 #elif defined(EMU_Z80JB)
         Z80Vector=0xff;
         Z80SetIrqLine(0x38, 1);
+#elif defined(EMU_DRZ80)
+        DrZ80_Set_Irq(0x38);
 #endif
       }
       Hint=Masta.v.Reg[10];
@@ -74,6 +80,8 @@ static void RunLine()
 #elif defined(EMU_Z80JB)
       Z80Vector=0xff;
       Z80SetIrqLine(0x38, 1);
+#elif defined(EMU_DRZ80)
+      DrZ80_Set_Irq(0x38);
 #endif
     }
   }
@@ -91,6 +99,8 @@ int MastFrame()
   nDozeInterrupt=Masta.Irq ? 0xff : -1; // Load IRQ latch
 #elif defined(EMU_Z80JB)
   Z80Vector=Masta.Irq;
+#elif defined(EMU_DRZ80)
+  drz80.z80irqvector = Masta.Irq;
 #endif
 
   if (MastEx&MX_PAL) LineCyc=273; // PAL timings (but not really: not enough lines)
@@ -112,10 +122,15 @@ int MastFrame()
     Z80SetIrqLine(Z80_INPUT_LINE_NMI, 1);
   else
     Z80SetIrqLine(Z80_INPUT_LINE_NMI, 0);
+#elif defined(EMU_DRZ80)
+	drz80.Z80_NMI = 1;
+  else
+  	drz80.Z80_NMI = 0;
 #endif
 
   // Active scan
   for (MastY=0;MastY<192;MastY++) { Mdraw.Line=MastY; MdrawDo(); RunLine(); }
+
   // Finish sound
   MsndTo(MsndLen);
 
@@ -123,6 +138,8 @@ int MastFrame()
   Masta.Irq = (unsigned char)(nDozeInterrupt==0xff); // Save IRQ latch
 #elif defined(EMU_Z80JB)
   Masta.Irq = Z80Vector;
+#elif defined(EMU_DRZ80)
+  Masta.Irq = drz80.z80irqvector;
 #endif
 
   TotalCyc=0; // Don't update sound outside of a frame

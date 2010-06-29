@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<PXML xmlns="http://openpandora.org/namespaces/PXML" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="PXML_schema.xsd">
+  <application id="dega.cosam.1.15.0.0" appdata="dega">
+    <title lang="en_US">Dega</title>
+    <description lang="en_US">Atari Lynx emulator.</description>
+    <author name="Steve Maddison" website="http://www.cosam.org/"/>
+    
+    <exec command="dega.sh"/>
+    <version major="1" minor="15" release="0" build="0"/>
+    
+    <icon src="dega.png"/>
+    <previewpics>
+      <pic src=""/>
+    </previewpics>
+ 
+    <categories>
+      <category name="Game">
+        <subcategory name="Emulator"/>
+      </category>
+    </categories>
+  </application>
+</PXML>

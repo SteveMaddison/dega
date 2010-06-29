@@ -49,6 +49,9 @@ int MastAreaDega()
 #elif defined(EMU_Z80JB)
   ma.Data=&Z80;     ma.Len=0x25;            MastAcb(&ma); // 0x0010: Z80 registers
   ma.Data=Blank;    ma.Len=0x30-0x25;       MastAcb(&ma); // reserved
+#elif defined(EMU_DRZ80)
+  ma.Data=&drz80;   ma.Len=sizeof(drz80);   MastAcb(&ma); // 0x0010: Z80 registers
+  ma.Data=Blank;    ma.Len=0x30-ma.Len;     MastAcb(&ma); // reserved
 #endif
 
   ma.Data=&Masta;   ma.Len=sizeof(Masta);   MastAcb(&ma); // 0x0040: Masta
@@ -107,11 +110,18 @@ int MastAreaMeka()
   ma.Len=2;
 #ifdef EMU_DOZE
 #define SC(regname) ma.Data=&(Doze.regname); MastAcb(&ma);
-#elif defined(EMU_Z80JB)
-#define SC(regname) ma.Data=&(Z80.regname.w.l); MastAcb(&ma);
-#endif
   SC(af)  SC(bc)  SC(de)  SC(hl)  SC(ix) SC(iy) SC(pc) SC(sp)
   SC(af2) SC(bc2) SC(de2) SC(hl2)
+#elif defined(EMU_Z80JB)
+#define SC(regname) ma.Data=&(Z80.regname.w.l); MastAcb(&ma);
+  SC(af)  SC(bc)  SC(de)  SC(hl)  SC(ix) SC(iy) SC(pc) SC(sp)
+  SC(af2) SC(bc2) SC(de2) SC(hl2)
+#elif defined(EMU_DRZ80)
+#define SC(regname) ma.Data=&(drz80.Z80##regname); MastAcb(&ma);
+  SC(A)  SC(F)   SC(BC)  SC(DE)  SC(HL)  SC(IX) SC(IY) SC(PC) SC(SP)
+  SC(A2) SC(F2)  SC(BC2) SC(DE2) SC(HL2)
+#endif
+
 #undef SC
 
   // 001f
@@ -122,6 +132,8 @@ int MastAreaMeka()
     if (Doze.iff) Int=1;  Int|=Doze.im<<1;
 #elif defined(EMU_Z80JB)
     if (Z80.iff1) Int=1;  Int|=Z80.im<<1;
+#elif defined(EMU_DRZ80)
+    if (drz80.Z80IF) Int=1;  Int|=drz80.Z80IM<<1;
 #endif
     
     Int&=7; ma.Data=&Int; ma.Len=1; MastAcb(&ma); Int&=7;
@@ -133,6 +145,9 @@ int MastAreaMeka()
 #elif defined(EMU_Z80JB)
     Z80.iff1=Z80.iff2=0; if (Int&1) Z80.iff1=Z80.iff2=1;
     Z80.im=(unsigned char)(Int>>1);
+#elif defined(EMU_DRZ80)
+	drz80.Z80IF=0; if (Int&1) drz80.Z80IF=0x0101;
+	drz80.Z80IM=(unsigned char)(Int>>1);
 #endif
   }
 
