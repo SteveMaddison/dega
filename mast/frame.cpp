@@ -69,7 +69,7 @@ static void RunLine()
 
 #ifdef EMU_DOZE
   if (MastY==193)
-#elif defined(EMU_Z80JB)
+#elif defined(EMU_Z80JB) || defined(EMU_DRZ80)
   if (Masta.v.Stat&0x80)
 #endif
   {

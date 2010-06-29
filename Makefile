@@ -4,6 +4,7 @@ OPTFLAGS=-O3 -fomit-frame-pointer -funroll-loops -Wall \
 NOPYTHON=1
 NOVIDEO=1
 Z80=drz80
+DEBUG=1
 #OPTFLAGS=-O3 -fomit-frame-pointer -funroll-loops -march=i686 -mcpu=i686
 #OPTFLAGS=-xM -O3
 
@@ -35,6 +36,13 @@ ifeq ($(P),unix)
 	CFLAGS= $(OPTFLAGS) $(shell $(PREFIX)/bin/sdl-config --cflags) -DUSE_MENCODER -Imast -Idoze -Ilibmencoder -D__cdecl= -D__fastcall=
 else ifeq ($(P),win)
 	CFLAGS= $(OPTFLAGS) -DUSE_VFW -mno-cygwin -Imast -Idoze -Imaster -Iextra -Izlib -Ilibvfw
+endif
+
+ASFLAGS = $(OPTFLAGS)
+
+ifdef DEBUG
+	CFLAGS += -g
+	ASFLAGS += -g
 endif
 
 ifndef Z80
@@ -72,7 +80,11 @@ ifeq ($(BITS),64)
 else
 	NASM_FORMAT = elf
 endif
+ifeq ($(Z80),drz80)
+	EXEEXT = -drz80
+else
 	EXEEXT =
+endif
 	SOEXT = .so
 	PLATOBJ = sdl/main.o
 	PLATPYOBJ =
@@ -182,7 +194,7 @@ doze/dozea.o: doze/dozea.asm
 	nasm -f $(NASM_FORMAT) -o doze/dozea.o doze/dozea.asm
 
 DrZ80/DrZ80.o: DrZ80/DrZ80.s
-	$(AS) -o DrZ80/DrZ80.o -c DrZ80/DrZ80.s
+	$(AS) $(ASFLAGS) -o DrZ80/DrZ80.o -c DrZ80/DrZ80.s
 
 doze/dozea.asm: doze/dam$(EXEEXT)
 	cd doze ; $(WINE) ./dam

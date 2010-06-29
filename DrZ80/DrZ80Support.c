@@ -41,7 +41,7 @@ static RunCPUExample()
 
 void DrZ80_Init()
 {
-  memset( &drz80, 0, sizeof(drz80) );
+  memset( &drz80, 0, sizeof(struct DrZ80) );
   // save pointers to all required memory functions
 /*  drz80.z80_write8=Z80_write_8;
   drz80.z80_write16=Z80_write_16;

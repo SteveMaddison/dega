@@ -247,12 +247,29 @@ void MastSetMemHandlers()
   unsigned char DrZ80Read(unsigned short a)          { return SysRead(a); }
   void DrZ80Write(unsigned char d, unsigned short a) { SysWrite(a,d); }
 
+unsigned int DrZ80NullHandler_Stack( unsigned short s ) {
+	return 0;
+}
+
+unsigned short DrZ80NullHandler_Read16( unsigned short s ) {
+	return 0;
+}
+
+void DrZ80NullHandler_Write16( unsigned short s1, unsigned short s2 ) {
+	return;
+}
+
 void MastSetMemHandlers()
 {
   drz80.z80_in = DrZ80In;
   drz80.z80_out = DrZ80Out;
   drz80.z80_read8 = DrZ80Read;
   drz80.z80_write8 = DrZ80Write;
+
+  drz80.z80_rebaseSP = DrZ80NullHandler_Stack;
+  drz80.z80_rebasePC = DrZ80NullHandler_Stack;
+  drz80.z80_read16 = DrZ80NullHandler_Read16;
+  drz80.z80_write16 = DrZ80NullHandler_Write16; 
 }
 
 #endif
