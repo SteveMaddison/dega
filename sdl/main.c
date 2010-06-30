@@ -18,6 +18,7 @@
 #include <linux/fb.h>
 #include <sys/ioctl.h>
 #include <sys/mman.h>
+#include <linux/input.h>
 #endif
 
 #include "../python/embed.h"
@@ -311,6 +312,7 @@ void MvidModeChanged() {
 
 void MvidMovieStopped() {}
 
+#ifndef FB_RENDER
 void MimplFrame(int input) {
 	if (input) {
 		SDL_Event event;
@@ -385,6 +387,7 @@ void MimplFrame(int input) {
 		MastInput[0]&=~0x40;
 	}
 }
+#endif
 
 void usage(void)
 {
@@ -418,11 +421,17 @@ int main(int argc, char** argv)
 	int paused=0, frameadvance=0;
 
 #ifdef FB_RENDER
-	int frames = 0;
 	int fbfd = 0;
 	struct fb_var_screeninfo vinfo;
 	struct fb_fix_screeninfo finfo;
 	long int screensize = 0;
+
+	struct input_event ev[64];
+	int events = 0;
+	int kbfd = 0;
+	int kbrd = 0;
+	int kbvalue = 0;
+	int i;
 #endif
 
 	// options
@@ -578,7 +587,7 @@ int main(int argc, char** argv)
 #else
 	/* Open the file for reading and writing */
 	fbfd = open("/dev/fb1", O_RDWR);
-		if (!fbfd) {
+	if (!fbfd) {
 		printf("Error: cannot open framebuffer device.\n");
 		return -1;
 	}
@@ -607,6 +616,12 @@ int main(int argc, char** argv)
 		return -1;
 	}
 
+	/* Open device to capture keyboard events */
+	kbfd = open("/dev/input/event1", O_RDONLY|O_NONBLOCK);
+	if( kbfd < 0 ) {
+		printf("Error: cannot open keyboard event device.\n");
+		return -1;
+	}
 #endif
 
 	if(sound)
@@ -672,6 +687,7 @@ int main(int argc, char** argv)
 			}
 		}
 		frameadvance = 0;
+#ifndef FB_RENDER
 		if (paused)
 		{
 			SDL_WaitEvent(&event);
@@ -747,13 +763,57 @@ Handler:		switch (event.type)
                                 break;
                         }
                 }
+#else
+		kbrd = read(kbfd, ev, sizeof(struct input_event) * 64);
+
+		if (kbrd >= (int) sizeof(struct input_event)) {
+			for( i = 0; i < kbrd / sizeof(struct input_event); i++ ) {
+				if ( ev[i].type == 1 && !(ev[i].code == MSC_RAW || ev[i].code == MSC_SCAN) ) {
+					if( ev[i].value == 1 ) {
+						// Key down
+						switch( ev[i].code ) {
+							case KEY_UP:		MastInput[0]|=0x01; break;
+							case KEY_DOWN:		MastInput[0]|=0x02; break;
+							case KEY_LEFT:		MastInput[0]|=0x04; break;
+							case KEY_RIGHT:		MastInput[0]|=0x08; break;
+							case KEY_PAGEDOWN:	MastInput[0]|=0x10; break;
+							case KEY_END:		MastInput[0]|=0x20; break;
+							case KEY_LEFTALT:
+								MastInput[0]|=0x80;
+								if ((MastEx&MX_GG)==0)
+									MastInput[0]|=0x40;
+								break;
+							case KEY_MENU:
+								/* wait for key up... */
+								break;
+							default:
+								break;
+						}
+					}
+					else {
+						// Key up
+						switch( ev[i].code ) {
+							case KEY_UP:		MastInput[0]&=0xfe; break;
+							case KEY_DOWN:		MastInput[0]&=0xfd; break;
+							case KEY_LEFT:		MastInput[0]&=0xfb; break;
+							case KEY_RIGHT:		MastInput[0]&=0xf7; break;
+							case KEY_PAGEDOWN:	MastInput[0]&=0xef; break;
+							case KEY_END:		MastInput[0]&=0xdf; break;
+							case KEY_LEFTALT:	MastInput[0]&=0x3f; break;
+							case KEY_MENU:
+								done = 1;
+								break;
+							default:
+								break;
+						}
+					}
+				}	
+			}
+		}
+#endif
 		if (!paused || frameadvance)
 		{
 			if(sound) while(audio_len>aspec.samples*aspec.channels*2*4) usleep(5);
-		}
-		
-		if( frames++ == 3000 ) {
-			done = 1;
 		}		
 	}
 #ifndef NOPYTHON
