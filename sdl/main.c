@@ -769,7 +769,24 @@ Handler:		switch (event.type)
 		if (kbrd >= (int) sizeof(struct input_event)) {
 			for( i = 0; i < kbrd / sizeof(struct input_event); i++ ) {
 				if ( ev[i].type == 1 && !(ev[i].code == MSC_RAW || ev[i].code == MSC_SCAN) ) {
-					if( ev[i].value == 1 ) {
+					if( ev[i].value == 0 ) {
+						// Key up
+						switch( ev[i].code ) {
+							case KEY_UP:		MastInput[0]&=0xfe; break;
+							case KEY_DOWN:		MastInput[0]&=0xfd; break;
+							case KEY_LEFT:		MastInput[0]&=0xfb; break;
+							case KEY_RIGHT:		MastInput[0]&=0xf7; break;
+							case KEY_PAGEDOWN:	MastInput[0]&=0xef; break;
+							case KEY_END:		MastInput[0]&=0xdf; break;
+							case KEY_LEFTALT:	MastInput[0]&=0x3f; break;
+							case KEY_MENU:
+								done = 1;
+								break;
+							default:
+								break;
+						}
+					}
+					else {
 						// Key down
 						switch( ev[i].code ) {
 							case KEY_UP:		MastInput[0]|=0x01; break;
@@ -785,23 +802,6 @@ Handler:		switch (event.type)
 								break;
 							case KEY_MENU:
 								/* wait for key up... */
-								break;
-							default:
-								break;
-						}
-					}
-					else {
-						// Key up
-						switch( ev[i].code ) {
-							case KEY_UP:		MastInput[0]&=0xfe; break;
-							case KEY_DOWN:		MastInput[0]&=0xfd; break;
-							case KEY_LEFT:		MastInput[0]&=0xfb; break;
-							case KEY_RIGHT:		MastInput[0]&=0xf7; break;
-							case KEY_PAGEDOWN:	MastInput[0]&=0xef; break;
-							case KEY_END:		MastInput[0]&=0xdf; break;
-							case KEY_LEFTALT:	MastInput[0]&=0x3f; break;
-							case KEY_MENU:
-								done = 1;
 								break;
 							default:
 								break;
