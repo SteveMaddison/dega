@@ -779,7 +779,7 @@ Handler:		switch (event.type)
 							case KEY_PAGEDOWN:	MastInput[0]&=0xef; break;
 							case KEY_END:		MastInput[0]&=0xdf; break;
 							case KEY_LEFTALT:	MastInput[0]&=0x3f; break;
-							case KEY_MENU:
+							case KEY_RIGHTSHIFT:
 								done = 1;
 								break;
 							default:
@@ -800,8 +800,8 @@ Handler:		switch (event.type)
 								if ((MastEx&MX_GG)==0)
 									MastInput[0]|=0x40;
 								break;
-							case KEY_MENU:
-								/* wait for key up... */
+							case KEY_RIGHTSHIFT:
+								/* Wait for key up to exit... */
 								break;
 							default:
 								break;
