@@ -13,18 +13,29 @@
 #include <pthread.h>
 #include <time.h>
 
+#ifdef FB_RENDER
+#include <fcntl.h>
+#include <linux/fb.h>
+#include <sys/ioctl.h>
+#include <sys/mman.h>
+#endif
+
 #include "../python/embed.h"
 
 SDL_Surface *thescreen;
 unsigned short themap[256];
 
 int width, height;
-int hw_width = 400;
+int hw_width = 800;
 int hw_height = 480;
 int hw_xoffset = 0;
 int hw_yoffset = 0;
-int vscale = 2;
-int hscale = 2;
+int xoff,yoff;
+int vscale = 1;
+int hscale = 1;
+#ifdef FB_RENDER
+unsigned short *fbp = 0;
+#endif
 
 static int audio_len=0;
 
@@ -37,6 +48,7 @@ int identify = 0;
 int python;
 int vidflags=0;
 
+#ifndef FB_RENDER
 int scrlock()
 {
         if(SDL_MUSTLOCK(thescreen))
@@ -56,6 +68,7 @@ void scrunlock(void)
                 SDL_UnlockSurface(thescreen);
         SDL_UpdateRect(thescreen, 0, 0, 0, 0);
 }
+#endif
 
 void MsndCall(void* data, Uint8* stream, int len)
 {
@@ -132,6 +145,7 @@ static int StateSave(char *StateName)
   return 0;
 }
 
+#ifndef FB_RENDER
 static void LeaveFullScreen() {
 	if (vidflags&SDL_FULLSCREEN) {
 		thescreen = SDL_SetVideoMode(hw_width, hw_height, 15, SDL_SWSURFACE|(vidflags&~SDL_FULLSCREEN));
@@ -143,41 +157,58 @@ static void EnterFullScreen() {
 		thescreen = SDL_SetVideoMode(hw_width, hw_height, 15, SDL_SWSURFACE|vidflags);
 	}
 }
+#endif
 
 void HandleSaveState() {
 	char buffer[64];
+#ifndef FB_RENDER
 	LeaveFullScreen();
+#endif
 	puts("Enter name of state to save:");
 	chompgets(buffer, sizeof(buffer), stdin);
 	StateSave(buffer);
+#ifndef FB_RENDER
 	EnterFullScreen();
+#endif
 }
 
 void HandleLoadState() {
 	char buffer[64];
+#ifndef FB_RENDER
 	LeaveFullScreen();
+#endif
 	puts("Enter name of state to load:");
 	chompgets(buffer, sizeof(buffer), stdin);
 	StateLoad(buffer);
+#ifndef FB_RENDER
 	EnterFullScreen();
+#endif
 }
 
 void HandleRecordMovie(int reset) {
 	char buffer[64];
+#ifndef FB_RENDER
 	LeaveFullScreen();
+#endif
 	printf("Enter name of movie to begin recording%s:\n", reset ? " from reset" : "");
 	chompgets(buffer, sizeof(buffer), stdin);
 	MvidStart(buffer, RECORD_MODE, reset, 0);
+#ifndef FB_RENDER
 	EnterFullScreen();
+#endif
 }
 
 void HandlePlaybackMovie(void) {
 	char buffer[64];
+#ifndef FB_RENDER
 	LeaveFullScreen();
+#endif
 	puts("Enter name of movie to begin playback:");
 	chompgets(buffer, sizeof(buffer), stdin);
 	MvidStart(buffer, PLAYBACK_MODE, 0, 0);
+#ifndef FB_RENDER
 	EnterFullScreen();
+#endif
 }
 
 void HandleSetAuthor(void) {
@@ -185,7 +216,9 @@ void HandleSetAuthor(void) {
 	char *pbuffer = buffer, *pbuffer_utf8 = buffer_utf8;
 	size_t buffersiz, buffersiz_utf8 = sizeof(buffer_utf8), bytes;
 	iconv_t cd;
+#ifndef FB_RENDER
 	LeaveFullScreen();
+#endif
 	puts("Enter name of author:");
 	chompgets(buffer, sizeof(buffer), stdin);
 	buffersiz = strlen(buffer);
@@ -203,7 +236,9 @@ void HandleSetAuthor(void) {
 
 	MvidSetAuthor(buffer_utf8);
 
+#ifndef FB_RENDER
 	EnterFullScreen();
+#endif
 }
 
 #ifndef NOPYTHON
@@ -330,9 +365,13 @@ void MimplFrame(int input) {
 		}
 	}
 
+#ifndef FB_RENDER
 	scrlock();
+#endif
 	MastFrame();
+#ifndef FB_RENDER
 	scrunlock();
+#endif
 
 #if 0
 	pydega_cbpostframe(mainstate);
@@ -377,6 +416,14 @@ int main(int argc, char** argv)
 	SDL_AudioSpec aspec;
 	unsigned char* audiobuf = NULL;
 	int paused=0, frameadvance=0;
+
+#ifdef FB_RENDER
+	int frames = 0;
+	int fbfd = 0;
+	struct fb_var_screeninfo vinfo;
+	struct fb_fix_screeninfo finfo;
+	long int screensize = 0;
+#endif
 
 	// options
 	int autodetect=1;
@@ -470,10 +517,14 @@ int main(int argc, char** argv)
 
 	atexit(SDL_Quit);
 
+#ifndef FB_RENDER
 	if(sound)
 		SDL_Init(SDL_INIT_VIDEO|SDL_INIT_AUDIO);
 	else
 		SDL_Init(SDL_INIT_VIDEO);
+#else
+	SDL_Init(SDL_INIT_AUDIO);
+#endif
 
 	MastInit();
 	MastLoadRom(argv[optind], &rom, &romlength);
@@ -493,37 +544,70 @@ int main(int argc, char** argv)
 	if( MastEx&MX_GG ) {
 		width = 160;
 		height = 144;
-		hw_width = 160;
-		hw_height = 144;
+   		xoff=64; yoff=24;
 	}
 	else {
 		width = 256;
 		height = 192;	
-		hw_width = 256;
-		hw_height = 192;
+   		xoff=16;
 	}
 	
+	hw_width = width;
+	hw_height = height;
+
+/*
 	hscale = hw_width/width;
 	vscale = hw_height/height;
 	
-	/*
 	if( vscale > hscale )
 		vscale = hscale;
 	else
 		hscale = vscale;
 	
-	printf( "HW: %dx%d, Scale: %dx%d\n", hw_width, hw_height, hscale, vscale );
-	*/
-
 	hw_xoffset = (hw_width - (width * hscale)) / 2;
 	hw_yoffset = (hw_height - (height * vscale)) / 2;
+*/
 
+#ifndef FB_RENDER
 	thescreen=SDL_SetVideoMode(hw_width, hw_height, 15, SDL_SWSURFACE|vidflags);
 	if(thescreen==NULL) {
 		fprintf(stderr, "Couldn't set video mode: %s\n", SDL_GetError());
 		SDL_Quit();
 		return -1;
 	}
+#else
+	/* Open the file for reading and writing */
+	fbfd = open("/dev/fb1", O_RDWR);
+		if (!fbfd) {
+		printf("Error: cannot open framebuffer device.\n");
+		return -1;
+	}
+
+	/* Get fixed screen information */
+	if (ioctl(fbfd, FBIOGET_FSCREENINFO, &finfo)) {
+		printf("Error reading fixed information.\n");
+		return -1;
+	}
+
+	/* Get variable screen information */
+	if (ioctl(fbfd, FBIOGET_VSCREENINFO, &vinfo)) {
+		printf("Error reading variable information.\n");
+		return -1;
+	}
+
+	/* Figure out the size of the screen in bytes */
+	screensize = vinfo.xres * vinfo.yres * vinfo.bits_per_pixel / 8;
+	printf("FB: %dx%dx%d = %d bytes\n", vinfo.xres, vinfo.yres, vinfo.bits_per_pixel, screensize );
+	SDL_Delay(1000);
+
+	/* Map the device to memory */
+	fbp = (unsigned short *)mmap(0, screensize, PROT_READ | PROT_WRITE, MAP_SHARED, fbfd, 0);
+	if ((int)fbp == -1) {
+		printf("Error: failed to map framebuffer device to memory.\n"); 
+		return -1;
+	}
+
+#endif
 
 	if(sound)
 	{
@@ -559,9 +643,13 @@ int main(int argc, char** argv)
 	{
 		if (!paused || frameadvance)
 		{
+#ifndef FB_RENDER
 			scrlock();
+#endif
 			MastFrame();
+#ifndef FB_RENDER
 			scrunlock();
+#endif
 
 #ifndef NOPYTHON
 #if 0
@@ -663,21 +751,34 @@ Handler:		switch (event.type)
 		{
 			if(sound) while(audio_len>aspec.samples*aspec.channels*2*4) usleep(5);
 		}
+		
+		if( frames++ == 3000 ) {
+			done = 1;
+		}		
 	}
 #ifndef NOPYTHON
 	if (python) {
 		MPyEmbed_Fini();
 	}
 #endif
+
+#ifdef FB_RENDER
+	munmap(fbp, screensize);
+	close(fbfd);
+#endif
+
 	return 0;
 }
 
 void MdrawCall()
 {
-	int i,j,k,l,xoff,yoff=0;
+	int i=0;
 	unsigned short *line;
 
-	if(Mdraw.Data[0]) printf("MdrawCall called, line %d, first pixel %d\n",Mdraw.Line,Mdraw.Data[0]);
+   	if( Mdraw.Line-yoff<0 || Mdraw.Line-yoff>=height )
+   		return;
+
+//	if(Mdraw.Data[0]) printf("MdrawCall called, line %d, first pixel %d\n",Mdraw.Line,Mdraw.Data[0]);
 	if(Mdraw.PalChange)
 	{
 		Mdraw.PalChange=0;
@@ -687,27 +788,24 @@ void MdrawCall()
 			themap[i] = ((p(i)&0xf00)>>7) | ((p(i)&0xf0)<<2) | ((p(i)&0xf)<<11);
 		}
 	}
-    if(MastEx&MX_GG) {
-    	xoff=64; yoff=24;
-    }
-    else {
-    	xoff=16;
-    }
 
-   	if( Mdraw.Line-yoff<0 || Mdraw.Line-yoff>=height )
-   		return;
-   	
+#ifndef FB_RENDER
    	line = (thescreen->pixels)+(Mdraw.Line-yoff)*thescreen->pitch * vscale;
-   	line += hw_width * hw_yoffset;
+#else
+   	line = (fbp)+((Mdraw.Line-yoff)*width);
+#endif
+/*   	line += hw_width * hw_yoffset; */
 
-	k = hw_xoffset;
 	for (i=0; i < width; i++) {
-		for(l=0; l < hscale; l++) {
-			line[k++] = themap[Mdraw.Data[xoff+i]];
-		}
+		line[i] = (themap[Mdraw.Data[xoff+i]] << 1 & 0xffe0)
+                | (themap[Mdraw.Data[xoff+i]] & 0x003c);
+
 	}
-		
+
+/*
 	for (j=1; j < vscale; j++) {
 		memcpy( line+(j*hw_width), line, hw_width*(sizeof(line)) );
 	}
+*/
 }
+

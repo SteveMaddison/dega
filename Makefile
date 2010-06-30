@@ -1,18 +1,21 @@
 PREFIX=/usr/local/pandora/arm-2009q3/usr
 OPTFLAGS=-O3 -fomit-frame-pointer -funroll-loops -Wall \
 	-ffast-math -mcpu=cortex-a8 -mfpu=neon -ftree-vectorize -mfloat-abi=softfp -fsingle-precision-constant
+#PREFIX=/usr
+#OPTFLAGS=-O3 -fomit-frame-pointer -funroll-loops -Wall
 NOPYTHON=1
 NOVIDEO=1
-Z80=drz80
+Z80=z80jb
 DEBUG=1
 #OPTFLAGS=-O3 -fomit-frame-pointer -funroll-loops -march=i686 -mcpu=i686
 #OPTFLAGS=-xM -O3
 
 CC=arm-none-linux-gnueabi-gcc
-#CC=icc
 CXX=arm-none-linux-gnueabi-g++
 AS=arm-none-linux-gnueabi-gcc
-#CXX=icpc
+#CC=gcc
+#CXX=g++
+#AS=gcc
 NASM=nasm
 WINDRES=windres
 
@@ -73,6 +76,9 @@ else
 CFLAGS += -DNOPYTHON
 CXXFLAGS += -DNOPYTHON
 endif
+
+CFLAGS += -DFB_RENDER
+CXXFLAGS += -DFB_RENDER
 
 ifeq ($(P),unix)
 ifeq ($(BITS),64)
