@@ -13,21 +13,22 @@
 #include <pthread.h>
 #include <time.h>
 
+#ifndef NOPYTHON
+#include "../python/embed.h"
+#endif
+
 #ifdef FB_RENDER
 #include <fcntl.h>
 #include <linux/fb.h>
 #include <sys/ioctl.h>
 #include <sys/mman.h>
 #include <linux/input.h>
-#endif
 
-#include "../python/embed.h"
-
-#ifdef FB_RENDER
 unsigned short *fbp = 0;
 #else
 SDL_Surface *thescreen;
 #endif
+
 unsigned short themap[256];
 int width, height;
 int xoff,yoff;
@@ -155,65 +156,57 @@ static void EnterFullScreen() {
 #endif
 
 void HandleSaveState() {
-	char buffer[64];
 #ifndef FB_RENDER
+	char buffer[64];
 	LeaveFullScreen();
-#endif
 	puts("Enter name of state to save:");
 	chompgets(buffer, sizeof(buffer), stdin);
 	StateSave(buffer);
-#ifndef FB_RENDER
 	EnterFullScreen();
 #endif
 }
 
 void HandleLoadState() {
-	char buffer[64];
 #ifndef FB_RENDER
+	char buffer[64];
 	LeaveFullScreen();
-#endif
 	puts("Enter name of state to load:");
 	chompgets(buffer, sizeof(buffer), stdin);
 	StateLoad(buffer);
-#ifndef FB_RENDER
 	EnterFullScreen();
 #endif
 }
 
 void HandleRecordMovie(int reset) {
-	char buffer[64];
 #ifndef FB_RENDER
+	char buffer[64];
 	LeaveFullScreen();
-#endif
 	printf("Enter name of movie to begin recording%s:\n", reset ? " from reset" : "");
 	chompgets(buffer, sizeof(buffer), stdin);
 	MvidStart(buffer, RECORD_MODE, reset, 0);
-#ifndef FB_RENDER
 	EnterFullScreen();
 #endif
 }
 
 void HandlePlaybackMovie(void) {
-	char buffer[64];
 #ifndef FB_RENDER
+	char buffer[64];
 	LeaveFullScreen();
-#endif
 	puts("Enter name of movie to begin playback:");
 	chompgets(buffer, sizeof(buffer), stdin);
 	MvidStart(buffer, PLAYBACK_MODE, 0, 0);
-#ifndef FB_RENDER
 	EnterFullScreen();
 #endif
 }
 
 void HandleSetAuthor(void) {
+#ifndef FB_RENDER
 	char buffer[64], buffer_utf8[64];
 	char *pbuffer = buffer, *pbuffer_utf8 = buffer_utf8;
 	size_t buffersiz, buffersiz_utf8 = sizeof(buffer_utf8), bytes;
 	iconv_t cd;
-#ifndef FB_RENDER
+
 	LeaveFullScreen();
-#endif
 	puts("Enter name of author:");
 	chompgets(buffer, sizeof(buffer), stdin);
 	buffersiz = strlen(buffer);
@@ -231,7 +224,6 @@ void HandleSetAuthor(void) {
 
 	MvidSetAuthor(buffer_utf8);
 
-#ifndef FB_RENDER
 	EnterFullScreen();
 #endif
 }
@@ -361,13 +353,10 @@ void MimplFrame(int input) {
 		}
 	}
 
-#ifndef FB_RENDER
+
 	scrlock();
-#endif
 	MastFrame();
-#ifndef FB_RENDER
 	scrunlock();
-#endif
 
 #if 0
 	pydega_cbpostframe(mainstate);
@@ -381,7 +370,7 @@ void MimplFrame(int input) {
 		MastInput[0]&=~0x40;
 	}
 }
-#endif
+#endif /* ifndef FB_RENDER */
 
 void usage(void)
 {
@@ -756,7 +745,7 @@ Handler:		switch (event.type)
                                 break;
                         }
                 }
-#else
+#else /* ifndef FB_RENDER */
 		kbrd = read(kbfd, ev, sizeof(struct input_event) * 64);
 
 		if (kbrd >= (int) sizeof(struct input_event)) {
@@ -803,7 +792,7 @@ Handler:		switch (event.type)
 				}	
 			}
 		}
-#endif
+#endif /* ifndef FB_RENDER */
 		if (!paused || frameadvance)
 		{
 			if(sound) while(audio_len>aspec.samples*aspec.channels*2*4) usleep(5);

@@ -4,7 +4,7 @@ OPTFLAGS=-O3 -fomit-frame-pointer -funroll-loops -Wall \
 #PREFIX=/usr
 #OPTFLAGS=-O3 -fomit-frame-pointer -funroll-loops -Wall
 NOPYTHON=1
-NOVIDEO=1
+NOMOVIE=1
 Z80=z80jb
 #DEBUG=1
 #OPTFLAGS=-O3 -fomit-frame-pointer -funroll-loops -march=i686 -mcpu=i686
@@ -97,7 +97,7 @@ endif
 	PLATPYOBJCXX =
 	EXTRA_LIBS = $(shell $(PREFIX)/bin/sdl-config --libs) -lm -lts
 	DOZE_FIXUP = sed -f doze/doze.cmd.sed <doze/dozea.asm >doze/dozea.asm.new && mv doze/dozea.asm.new doze/dozea.asm
-ifndef NOVIDEO
+ifndef NOMOVIE
 	ENCODER_OBJ = tools/degavi.o
 	ENCODER_LIBS = libmencoder/libmencoder.a
 	ENCODER_LDFLAGS = -lm
@@ -129,7 +129,7 @@ else ifeq ($(P),win)
 	PYTHON_LDFLAGS = -L$(PYTHON_PREFIX)/libs -lpython25
 endif
 
-ifdef NOVIDEO
+ifdef NOMOVIE
 ALLOBJ = dega$(EXEEXT)
 else
 ALLOBJ = dega$(EXEEXT) mmvconv$(EXEEXT) degavi$(EXEEXT)
