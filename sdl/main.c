@@ -23,8 +23,13 @@
 #include <sys/ioctl.h>
 #include <sys/mman.h>
 #include <linux/input.h>
+#ifndef FBIO_WAITFORVSYNC
+#define FBIO_WAITFORVSYNC _IOW('F', 0x20, __u32)
+#endif
 
-unsigned short *fbp = 0;
+unsigned short *fbp1 = 0;
+unsigned short *fbp2 = 0;
+unsigned short *fbp = 0; /* Current buffer */
 #else
 SDL_Surface *thescreen;
 #endif
@@ -81,6 +86,7 @@ void MsndCall(void* data, Uint8* stream, int len)
 	memcpy(data,(unsigned char*)data+len,audio_len);
 }
 
+#ifndef FB_RENDER
 static char *chompgets(char *buf, int len, FILE *fh) {
 	char *ret;
 	if ((ret = fgets(buf, len, fh))) {
@@ -91,6 +97,7 @@ static char *chompgets(char *buf, int len, FILE *fh) {
 	}
 	return ret;
 }
+#endif
 
 static FILE *sf;
 
@@ -409,6 +416,7 @@ int main(int argc, char** argv)
 	struct fb_var_screeninfo vinfo;
 	struct fb_fix_screeninfo finfo;
 	long int screensize = 0;
+	int fbarg = 0;
 
 	struct input_event ev[64];
 	char kbdev[32];
@@ -575,11 +583,17 @@ int main(int argc, char** argv)
 	screensize = vinfo.xres * vinfo.yres * vinfo.bits_per_pixel / 8;
 
 	/* Map the device to memory */
-	fbp = (unsigned short *)mmap(0, screensize, PROT_READ | PROT_WRITE, MAP_SHARED, fbfd, 0);
-	if ((int)fbp == -1) {
+	fbp1 = (unsigned short *)mmap(0, screensize * 2, PROT_WRITE, MAP_SHARED, fbfd, 0);
+	if ((int)fbp1 == -1) {
 		printf("Error: failed to map framebuffer device to memory.\n"); 
 		return -1;
 	}
+	/* Pointer to second buffer */
+	fbp2 = fbp1 + screensize/2;
+	
+	/* Select first buffer */
+	fbp = fbp1;
+	vinfo.yoffset = 0;
 
 	/* Open device to capture keyboard events */
 	for( i = 0; 1; i++ ) {
@@ -646,6 +660,18 @@ int main(int argc, char** argv)
 			MastFrame();
 #ifndef FB_RENDER
 			scrunlock();
+#else
+			ioctl(fbfd, FBIOPAN_DISPLAY, &vinfo);
+
+			/* Flip buffers */
+			if( fbp == fbp1 ) {
+				fbp = fbp2;
+				vinfo.yoffset = height;
+			}
+			else {
+				fbp = fbp1;
+				vinfo.yoffset = 0;
+			}
 #endif
 
 #ifndef NOPYTHON
@@ -796,7 +822,10 @@ Handler:		switch (event.type)
 		if (!paused || frameadvance)
 		{
 			if(sound) while(audio_len>aspec.samples*aspec.channels*2*4) usleep(5);
-		}		
+		}
+#ifdef FB_RENDER
+		ioctl(fbfd, FBIO_WAITFORVSYNC, &fbarg);
+#endif
 	}
 #ifndef NOPYTHON
 	if (python) {
@@ -805,7 +834,7 @@ Handler:		switch (event.type)
 #endif
 
 #ifdef FB_RENDER
-	munmap(fbp, screensize);
+	munmap(fbp1, screensize);
 	close(fbfd);
 #endif
 
@@ -833,14 +862,18 @@ void MdrawCall()
 
 #ifndef FB_RENDER
    	line = (thescreen->pixels)+(Mdraw.Line-yoff)*thescreen->pitch * vscale;
+
+	for (i=0; i < width; i++) {
+		line[i] = themap[Mdraw.Data[xoff+i]];
+	}
 #else
    	line = (fbp)+((Mdraw.Line-yoff)*width);
-#endif
 
 	for (i=0; i < width; i++) {
 		line[i] = (themap[Mdraw.Data[xoff+i]] << 1 & 0xffe0)
                 | (themap[Mdraw.Data[xoff+i]] & 0x003c);
 
 	}
+#endif
 }
 
