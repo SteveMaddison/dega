@@ -6,7 +6,7 @@ OPTFLAGS=-O3 -fomit-frame-pointer -funroll-loops -Wall \
 NOPYTHON=1
 NOVIDEO=1
 Z80=z80jb
-DEBUG=1
+#DEBUG=1
 #OPTFLAGS=-O3 -fomit-frame-pointer -funroll-loops -march=i686 -mcpu=i686
 #OPTFLAGS=-xM -O3
 

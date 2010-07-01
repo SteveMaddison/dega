@@ -414,23 +414,23 @@ int main(int argc, char** argv)
 	unsigned char* rom;
 	int romlength;
 	int done=0;
-	SDL_Event event;
-	int key;
 	SDL_AudioSpec aspec;
 	unsigned char* audiobuf = NULL;
 	int paused=0, frameadvance=0;
 
-#ifdef FB_RENDER
+#ifndef FB_RENDER
+	SDL_Event event;
+	int key;
+#else
 	int fbfd = 0;
 	struct fb_var_screeninfo vinfo;
 	struct fb_fix_screeninfo finfo;
 	long int screensize = 0;
 
 	struct input_event ev[64];
-	int events = 0;
+	char kbdev[32];
 	int kbfd = 0;
 	int kbrd = 0;
-	int kbvalue = 0;
 	int i;
 #endif
 
@@ -606,8 +606,6 @@ int main(int argc, char** argv)
 
 	/* Figure out the size of the screen in bytes */
 	screensize = vinfo.xres * vinfo.yres * vinfo.bits_per_pixel / 8;
-	printf("FB: %dx%dx%d = %d bytes\n", vinfo.xres, vinfo.yres, vinfo.bits_per_pixel, screensize );
-	SDL_Delay(1000);
 
 	/* Map the device to memory */
 	fbp = (unsigned short *)mmap(0, screensize, PROT_READ | PROT_WRITE, MAP_SHARED, fbfd, 0);
@@ -617,7 +615,24 @@ int main(int argc, char** argv)
 	}
 
 	/* Open device to capture keyboard events */
-	kbfd = open("/dev/input/event1", O_RDONLY|O_NONBLOCK);
+	for( i = 0; 1; i++ ) {
+		snprintf( kbdev, 32, "/dev/input/event%i", i );
+
+		kbfd = open( kbdev, O_RDONLY|O_NONBLOCK );
+		if( kbfd < 0 ) {
+			/* No more devices */
+			break;
+		}
+
+		ioctl( kbfd, EVIOCGNAME(sizeof(kbdev)), kbdev );
+		if( strcmp( kbdev, "gpio-keys" ) == 0 ) {
+			/* Found device */
+			break;
+		}
+			
+		close( kbfd ); /* we don't need this device */
+	}
+	
 	if( kbfd < 0 ) {
 		printf("Error: cannot open keyboard event device.\n");
 		return -1;
