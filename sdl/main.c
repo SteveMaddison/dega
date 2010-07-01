@@ -23,20 +23,14 @@
 
 #include "../python/embed.h"
 
-SDL_Surface *thescreen;
-unsigned short themap[256];
-
-int width, height;
-int hw_width = 800;
-int hw_height = 480;
-int hw_xoffset = 0;
-int hw_yoffset = 0;
-int xoff,yoff;
-int vscale = 1;
-int hscale = 1;
 #ifdef FB_RENDER
 unsigned short *fbp = 0;
+#else
+SDL_Surface *thescreen;
 #endif
+unsigned short themap[256];
+int width, height;
+int xoff,yoff;
 
 static int audio_len=0;
 
@@ -149,13 +143,13 @@ static int StateSave(char *StateName)
 #ifndef FB_RENDER
 static void LeaveFullScreen() {
 	if (vidflags&SDL_FULLSCREEN) {
-		thescreen = SDL_SetVideoMode(hw_width, hw_height, 15, SDL_SWSURFACE|(vidflags&~SDL_FULLSCREEN));
+		thescreen = SDL_SetVideoMode(width, height, 15, SDL_SWSURFACE|(vidflags&~SDL_FULLSCREEN));
 	}
 }
 
 static void EnterFullScreen() {
 	if (vidflags&SDL_FULLSCREEN) {
-		thescreen = SDL_SetVideoMode(hw_width, hw_height, 15, SDL_SWSURFACE|vidflags);
+		thescreen = SDL_SetVideoMode(width, height, 15, SDL_SWSURFACE|vidflags);
 	}
 }
 #endif
@@ -561,24 +555,8 @@ int main(int argc, char** argv)
    		xoff=16;
 	}
 	
-	hw_width = width;
-	hw_height = height;
-
-/*
-	hscale = hw_width/width;
-	vscale = hw_height/height;
-	
-	if( vscale > hscale )
-		vscale = hscale;
-	else
-		hscale = vscale;
-	
-	hw_xoffset = (hw_width - (width * hscale)) / 2;
-	hw_yoffset = (hw_height - (height * vscale)) / 2;
-*/
-
 #ifndef FB_RENDER
-	thescreen=SDL_SetVideoMode(hw_width, hw_height, 15, SDL_SWSURFACE|vidflags);
+	thescreen=SDL_SetVideoMode(width, height, 15, SDL_SWSURFACE|vidflags);
 	if(thescreen==NULL) {
 		fprintf(stderr, "Couldn't set video mode: %s\n", SDL_GetError());
 		SDL_Quit();
@@ -853,7 +831,7 @@ void MdrawCall()
    	if( Mdraw.Line-yoff<0 || Mdraw.Line-yoff>=height )
    		return;
 
-//	if(Mdraw.Data[0]) printf("MdrawCall called, line %d, first pixel %d\n",Mdraw.Line,Mdraw.Data[0]);
+/*	if(Mdraw.Data[0]) printf("MdrawCall called, line %d, first pixel %d\n",Mdraw.Line,Mdraw.Data[0]); */
 	if(Mdraw.PalChange)
 	{
 		Mdraw.PalChange=0;
@@ -869,18 +847,11 @@ void MdrawCall()
 #else
    	line = (fbp)+((Mdraw.Line-yoff)*width);
 #endif
-/*   	line += hw_width * hw_yoffset; */
 
 	for (i=0; i < width; i++) {
 		line[i] = (themap[Mdraw.Data[xoff+i]] << 1 & 0xffe0)
                 | (themap[Mdraw.Data[xoff+i]] & 0x003c);
 
 	}
-
-/*
-	for (j=1; j < vscale; j++) {
-		memcpy( line+(j*hw_width), line, hw_width*(sizeof(line)) );
-	}
-*/
 }
 
