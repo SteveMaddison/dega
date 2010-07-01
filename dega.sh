@@ -1,8 +1,7 @@
 #!/bin/bash
 
 SAVEDIR=./dir.saved
-export SDL_VIDEODRIVER=fbcon
-export SDL_FBDEV=/dev/fb1
+FBDEV=/dev/fb1
 
 # Did we save a ROM directory last time?
 ROMDIR=`cat $SAVEDIR 2> /dev/null`
@@ -14,28 +13,27 @@ else
 fi
 
 # Get a ROM file name.
-ROM=`zenity --file-selection --title="Select a Mster System/Game Gear ROM"`
+ROM=`zenity --file-selection --title="Select a Master System/Game Gear ROM"`
 [ $? -eq 0 ] || exit 1;
 
+# Save ROM's directory.
 cd $PNDDIR
+dirname "$ROM" > $SAVEDIR
 
 # Identify the ROM and set frame buffer stuff to scale accordingly.
 if [ `./dega -i "$ROM"` = "GG" ]; then
-	echo ofbset -fb $SDL_FBDEV -pos 160 24 -size 480 432 -mem 829440 -en 1
-	echo fbset -fb $SDL_FBDEV -g 480 432 480 432 16
+	ofbset -fb $FBDEV -pos 160 24 -size 480 432 -mem 414720 -en 1
+	fbset -fb $FBDEV -g 160 144 160 144 16
 else
-	echo ofbset -fb $SDL_FBDEV -pos 144 48 -size 512 384 -mem 786432 -en 1
-	echo fbset -fb $SDL_FBDEV -g 512 384 512 384 16
+	ofbset -fb $FBDEV -pos 144 48 -size 512 384 -mem 786432 -en 1
+	fbset -fb $FBDEV -g 256 192 256 192 16
 fi
 
-# Save ROM's directory.
-dirname $ROM > $SAVEDIR
-
 # Run the emulator
-echo ./dega "$ROM"
+op_runfbapp ./dega "\"$ROM\""
 
 # Upon failure, display the contents of the pndrun file.
 [ $? -eq 0 ] || zenity --text-info --title="Oops..." --filename=/tmp/pndrundega.out
 
 # Reset frame buffer stuff.
-echo ofbset -fb /dev/fb1 -pos 0 0 -size 0 0 -mem 0 -en 0
+ofbset -fb $FBDEV -pos 0 0 -size 0 0 -mem 0 -en 0
