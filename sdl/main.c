@@ -399,8 +399,8 @@ void MDrawOsd()
 				for( mask = 0x80; mask > 0 ; mask >>= 1 ) {
 					if( charset[*c - FONT_OFFSET][line] & mask ) {
 						*p = 0xf000;
-						*(p+1) = 0;
-						*(p+1+width) = 0;
+						*(p+1) &= 0x79ef;
+						*(p+1+width) &= 0x79ef;
 					}
 					p++;
 					
