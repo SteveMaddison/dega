@@ -7,9 +7,10 @@ NOPYTHON=1
 NOMOVIE=1
 Z80=z80jb
 #DEBUG=1
+PND_FILES = dega dega.png dega.sh dega.txt PXML.xml video.sh
+
 #OPTFLAGS=-O3 -fomit-frame-pointer -funroll-loops -march=i686 -mcpu=i686
 #OPTFLAGS=-xM -O3
-
 CC=arm-none-linux-gnueabi-gcc
 CXX=arm-none-linux-gnueabi-g++
 AS=arm-none-linux-gnueabi-gcc
@@ -231,8 +232,18 @@ $(PLATPYOBJCXX): %.o: %.cpp
 	$(CC) -c -o $@ $< -DEMBEDDED $(PYTHON_CFLAGS)
 
 clean:
-	rm -f $(Z80OBJ) $(DAMOBJ) $(MASTOBJ) $(PLATOBJ) $(PYOBJ) $(PYEMBOBJ) $(PLATPYOBJ) $(PLATPYOBJCXX) tools/degavi.o tools/mmvconv.o doze/dozea.asm* doze/dam doze/dam.exe dega dega.exe degavi degavi.exe mmvconv mmvconv.exe pydega.so pydega.dll pydega.pyd specs
+	rm -rf $(Z80OBJ) $(DAMOBJ) $(MASTOBJ) $(PLATOBJ) $(PYOBJ) $(PYEMBOBJ) $(PLATPYOBJ) $(PLATPYOBJCXX) tools/degavi.o tools/mmvconv.o doze/dozea.asm* doze/dam doze/dam.exe dega dega.exe degavi degavi.exe mmvconv mmvconv.exe pydega.so pydega.dll pydega.pyd specs dega.squash dega.pnd pnd
 	make -Czlib clean
 
 distclean: clean
 	rm -f *~ */*~
+	
+pnd: dega.pnd
+
+dega.pnd: $(PND_FILES)
+	mkdir -p pnd
+	cp -f $(PND_FILES) pnd/
+	rm -f dega.squash
+	mksquashfs pnd dega.squash
+	cat dega.squash PXML.xml dega.png > dega.pnd
+
