@@ -92,7 +92,7 @@ else
 	EXEEXT =
 endif
 	SOEXT = .so
-	PLATOBJ = sdl/main.o
+	PLATOBJ = sdl/main.o sdl/font.o
 	PLATPYOBJ =
 	PLATPYOBJCXX =
 	EXTRA_LIBS = $(shell $(PREFIX)/bin/sdl-config --libs) -lm -lts

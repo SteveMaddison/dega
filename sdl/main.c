@@ -16,6 +16,7 @@
 #ifndef NOPYTHON
 #include "../python/embed.h"
 #endif
+#include "font.h"
 
 #ifdef FB_RENDER
 #include <fcntl.h>
@@ -30,6 +31,12 @@
 unsigned short *fbp1 = 0;
 unsigned short *fbp2 = 0;
 unsigned short *fbp = 0; /* Current buffer */
+
+int fbfd = 0;
+struct fb_var_screeninfo vinfo;
+struct fb_fix_screeninfo finfo;
+long int screensize = 0;
+int fbarg = 0;
 #else
 SDL_Surface *thescreen;
 #endif
@@ -48,6 +55,10 @@ int identify = 0;
 
 int python;
 int vidflags=0;
+
+#define OSD_MSG_LEN 32
+char osd_msg[OSD_MSG_LEN] = "";
+int osd_frames = 0;
 
 #define ROM_NAME_LEN 128
 char rom_name[ROM_NAME_LEN];
@@ -372,6 +383,53 @@ void MimplFrame(int input) {
 }
 #endif /* ifndef FB_RENDER */
 
+void MDrawOsd()
+{
+#define OSD_OFFSET 8
+	if( osd_frames && *osd_msg ) {
+		int line = 0;
+		char mask = 0;
+		char *c = NULL;
+		unsigned short *p = NULL;
+		
+		for( line = 0 ; line < FONT_HEIGHT ; line++ ) {
+			c = osd_msg;
+			p = fbp + ((OSD_OFFSET+line)*width) + OSD_OFFSET;
+			while( *c ) {
+				for( mask = 0x80; mask > 0 ; mask >>= 1 ) {
+					if( charset[*c - FONT_OFFSET][line] & mask ) {
+						*p = 0xf000;
+						*(p+1) = 0;
+						*(p+1+width) = 0;
+					}
+					p++;
+					
+				}
+				c++;
+			}
+		}
+		osd_frames--;
+		if( osd_frames == 0 ) {
+			osd_msg[0] = 0;
+		}
+	}
+}
+
+void MFlip()
+{
+	ioctl(fbfd, FBIOPAN_DISPLAY, &vinfo);
+
+	/* Flip buffers */
+	if( fbp == fbp1 ) {
+		fbp = fbp2;
+		vinfo.yoffset = height;
+	}
+	else {
+		fbp = fbp1;
+		vinfo.yoffset = 0;
+	}
+}
+
 void usage(void)
 {
 	printf("\nUsage: %s [OPTION]... [ROM file]\n",APPNAME);
@@ -405,12 +463,6 @@ int main(int argc, char** argv)
 	SDL_Event event;
 	int key;
 #else
-	int fbfd = 0;
-	struct fb_var_screeninfo vinfo;
-	struct fb_fix_screeninfo finfo;
-	long int screensize = 0;
-	int fbarg = 0;
-
 	struct input_event ev[64];
 	char dev[32];
 	int fd = 0;
@@ -668,20 +720,11 @@ int main(int argc, char** argv)
 			scrlock();
 #endif
 			MastFrame();
+			MDrawOsd();
 #ifndef FB_RENDER
 			scrunlock();
 #else
-			ioctl(fbfd, FBIOPAN_DISPLAY, &vinfo);
-
-			/* Flip buffers */
-			if( fbp == fbp1 ) {
-				fbp = fbp2;
-				vinfo.yoffset = height;
-			}
-			else {
-				fbp = fbp1;
-				vinfo.yoffset = 0;
-			}
+			MFlip( fbfd );
 #endif
 
 #ifndef NOPYTHON
@@ -799,7 +842,7 @@ Handler:		switch (event.type)
 
 		if (kbrd >= (int) sizeof(struct input_event)) {
 			for( i = 0; i < kbrd / sizeof(struct input_event); i++ ) {
-				if ( ev[i].type == 1 && !(ev[i].code == MSC_RAW || ev[i].code == MSC_SCAN) ) {
+				if ( ev[i].type == 1 ) {
 					if( ev[i].value == 0 ) {
 						// Key up
 						switch( ev[i].code ) {
@@ -815,13 +858,22 @@ Handler:		switch (event.type)
 								shift = 0;
 								break;
 							case KEY_MENU:
-								if( paused )
-									done = 1;
-								else
+								if( !paused ) {
+									strncpy( osd_msg, "Really Quit (Y/N)?", OSD_MSG_LEN );
+									osd_frames = 1;
+									MDrawOsd();
+									MFlip();
 									paused = 1;
+								}
+								else {
+									paused = 0;
+								}
 								break;
 							default:
 								break;
+						}
+						if( ev[i].code != KEY_MENU ) {
+							paused = 0;
 						}
 					}
 					else if( ev[i].value == 1 ) {
@@ -845,76 +897,82 @@ Handler:		switch (event.type)
 							default:
 								break;
 						}
-						if( ev[i].code != KEY_MENU ) {
-							paused = 0;	
-						}
 					}
 				}	
 			}
 		}
 
 		if (kprd >= (int) sizeof(struct input_event)) {
-			paused = 0;
 			for( i = 0; i < kprd / sizeof(struct input_event); i++ ) {
-				if ( ev[i].type == 1 && !(ev[i].code == MSC_RAW || ev[i].code == MSC_SCAN) ) {
+				if ( ev[i].type == 1 ) {
 					if( ev[i].value == 0 ) {
 						// Key up
-						switch( ev[i].code ) {
-							case KEY_0:
-							case KEY_1:
-							case KEY_2:
-							case KEY_3:
-							case KEY_4:
-							case KEY_5:
-							case KEY_6:
-							case KEY_7:
-							case KEY_8:
-							case KEY_9:
-								if( shift ) {
-									/* Load or save state... */
-									char sname[ROM_NAME_LEN+2];
-									char *basename = NULL;
-									char number = 'x';
+						if( paused ) {
+							if( ev[i].code == KEY_Y ) {
+								done = 1;
+							}
+							else {						
+								paused = 0;
+							}
+						}
+						else {
+							switch( ev[i].code ) {
+								case KEY_0:
+								case KEY_1:
+								case KEY_2:
+								case KEY_3:
+								case KEY_4:
+								case KEY_5:
+								case KEY_6:
+								case KEY_7:
+								case KEY_8:
+								case KEY_9:
+									if( shift ) {
+										/* Load or save state... */
+										char sname[ROM_NAME_LEN+2];
+										char *basename = NULL;
+										char number = 'x';
 									
-									switch( ev[i].code ) {
-										case KEY_0: number = '0'; break;
-										case KEY_1: number = '1'; break;
-										case KEY_2: number = '2'; break;
-										case KEY_3: number = '3'; break;
-										case KEY_4: number = '4'; break;
-										case KEY_5: number = '5'; break;
-										case KEY_6: number = '6'; break;
-										case KEY_7: number = '7'; break;
-										case KEY_8: number = '8'; break;
-										case KEY_9: number = '9'; break;
-									}
+										switch( ev[i].code ) {
+											case KEY_0: number = '0'; break;
+											case KEY_1: number = '1'; break;
+											case KEY_2: number = '2'; break;
+											case KEY_3: number = '3'; break;
+											case KEY_4: number = '4'; break;
+											case KEY_5: number = '5'; break;
+											case KEY_6: number = '6'; break;
+											case KEY_7: number = '7'; break;
+											case KEY_8: number = '8'; break;
+											case KEY_9: number = '9'; break;
+										}
 									
-									basename = strrchr( rom_name, '/' );
-									if( basename == NULL ) {
-										basename = rom_name;
-									}
-									else {
-										basename++; /* Point past last slash. */
-									}
+										basename = strrchr( rom_name, '/' );
+										if( basename == NULL ) {
+											basename = rom_name;
+										}
+										else {
+											basename++; /* Point past last slash. */
+										}
 									
-									snprintf( sname, ROM_NAME_LEN+2, "%s.%c", basename, number );
+										snprintf( sname, ROM_NAME_LEN+2, "%s.%c", basename, number );
 									
-									if( shift == KEY_RIGHTSHIFT ) {
-										if( StateLoad( sname ) == 0 ) {
-											/* Some feedback for now... a message would be better. */
-											SDL_Delay(250);											
+										if( shift == KEY_RIGHTSHIFT ) {
+											if( StateLoad( sname ) == 0 ) {
+												snprintf( osd_msg, OSD_MSG_LEN, "Loaded state %c", number );
+												osd_frames = 120;
+											}
+										}
+										else if( shift == KEY_RIGHTCTRL ) {
+											if( StateSave( sname ) == 0 ) {
+												snprintf( osd_msg, OSD_MSG_LEN, "Saved state %c", number );
+												osd_frames = 120;
+											}
 										}
 									}
-									else if( shift == KEY_RIGHTCTRL ) {
-										if( StateSave( sname ) == 0 ) {
-											/* Some feedback for now... a message would be better. */
-											SDL_Delay(250);											
-										}
-									}
-								}
-								break;
-							default:
-								break;
+									break;
+								default:
+									break;
+							}
 						}
 					}
 					else if( ev[i].value == 1 ) {
