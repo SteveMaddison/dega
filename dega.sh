@@ -50,7 +50,7 @@ else
 fi
 
 # Run the emulator
-op_runfbapp ./dega "\"$ROM\""
+op_runfbapp ./dega "$ROM"
 
 # Upon failure, display the contents of the pndrun file.
 [ $? -eq 0 ] || zenity --text-info --title="Oops..." --filename=/tmp/pndrundega.out

@@ -49,6 +49,9 @@ int identify = 0;
 int python;
 int vidflags=0;
 
+#define ROM_NAME_LEN 128
+char rom_name[ROM_NAME_LEN];
+
 #ifndef FB_RENDER
 int scrlock()
 {
@@ -160,54 +163,44 @@ static void EnterFullScreen() {
 		thescreen = SDL_SetVideoMode(width, height, 15, SDL_SWSURFACE|vidflags);
 	}
 }
-#endif
 
 void HandleSaveState() {
-#ifndef FB_RENDER
 	char buffer[64];
 	LeaveFullScreen();
 	puts("Enter name of state to save:");
 	chompgets(buffer, sizeof(buffer), stdin);
 	StateSave(buffer);
 	EnterFullScreen();
-#endif
 }
 
 void HandleLoadState() {
-#ifndef FB_RENDER
 	char buffer[64];
 	LeaveFullScreen();
 	puts("Enter name of state to load:");
 	chompgets(buffer, sizeof(buffer), stdin);
 	StateLoad(buffer);
 	EnterFullScreen();
-#endif
 }
 
 void HandleRecordMovie(int reset) {
-#ifndef FB_RENDER
 	char buffer[64];
 	LeaveFullScreen();
 	printf("Enter name of movie to begin recording%s:\n", reset ? " from reset" : "");
 	chompgets(buffer, sizeof(buffer), stdin);
 	MvidStart(buffer, RECORD_MODE, reset, 0);
 	EnterFullScreen();
-#endif
 }
 
 void HandlePlaybackMovie(void) {
-#ifndef FB_RENDER
 	char buffer[64];
 	LeaveFullScreen();
 	puts("Enter name of movie to begin playback:");
 	chompgets(buffer, sizeof(buffer), stdin);
 	MvidStart(buffer, PLAYBACK_MODE, 0, 0);
 	EnterFullScreen();
-#endif
 }
 
 void HandleSetAuthor(void) {
-#ifndef FB_RENDER
 	char buffer[64], buffer_utf8[64];
 	char *pbuffer = buffer, *pbuffer_utf8 = buffer_utf8;
 	size_t buffersiz, buffersiz_utf8 = sizeof(buffer_utf8), bytes;
@@ -232,8 +225,8 @@ void HandleSetAuthor(void) {
 	MvidSetAuthor(buffer_utf8);
 
 	EnterFullScreen();
-#endif
 }
+#endif
 
 #ifndef NOPYTHON
 void HandlePython(void) {
@@ -419,9 +412,13 @@ int main(int argc, char** argv)
 	int fbarg = 0;
 
 	struct input_event ev[64];
-	char kbdev[32];
-	int kbfd = 0;
+	char dev[32];
+	int fd = 0;
+	int kbfd = 0; /* GPIO keypad (game controls) */
 	int kbrd = 0;
+	int kpfd = 0; /* Keypad/keyboard */
+	int kprd = 0;
+	int shift = 0;
 	int i;
 #endif
 
@@ -514,10 +511,11 @@ int main(int argc, char** argv)
 		fprintf(stderr,APPNAME ": no ROM image specified.\n");
 		exit(1);
 	}
+	strncpy( rom_name, argv[optind], ROM_NAME_LEN );
 
 	atexit(SDL_Quit);
-
-#ifndef FB_RENDER
+	
+#ifndef FB_RENDER	
 	if(sound)
 		SDL_Init(SDL_INIT_VIDEO|SDL_INIT_AUDIO);
 	else
@@ -525,9 +523,9 @@ int main(int argc, char** argv)
 #else
 	SDL_Init(SDL_INIT_AUDIO);
 #endif
-
+	
 	MastInit();
-	MastLoadRom(argv[optind], &rom, &romlength);
+	MastLoadRom( rom_name, &rom, &romlength);
 	MastSetRom(rom,romlength);
 	if (autodetect)
 		MastFlagsFromHeader();
@@ -597,24 +595,36 @@ int main(int argc, char** argv)
 
 	/* Open device to capture keyboard events */
 	for( i = 0; 1; i++ ) {
-		snprintf( kbdev, 32, "/dev/input/event%i", i );
+		sprintf( dev, "/dev/input/event%i", i );
 
-		kbfd = open( kbdev, O_RDONLY|O_NONBLOCK );
-		if( kbfd < 0 ) {
+		fd = open( dev, O_RDONLY|O_NONBLOCK );
+		if( fd < 0 ) {
 			/* No more devices */
 			break;
 		}
 
-		ioctl( kbfd, EVIOCGNAME(sizeof(kbdev)), kbdev );
-		if( strcmp( kbdev, "gpio-keys" ) == 0 ) {
-			/* Found device */
+		ioctl( fd, EVIOCGNAME(sizeof(dev)), dev );
+		if( strcmp( dev, "gpio-keys" ) == 0 ) {
+			kbfd = fd;
+		}
+		else if( strcmp( dev, "keypad" ) == 0 ) {
+			kpfd = fd;
+		}
+		else {
+			close( fd ); /* we don't need this device */
+		}
+		
+		if( kbfd && kpfd ) {
+			/* Found both devices. */
 			break;
 		}
-			
-		close( kbfd ); /* we don't need this device */
 	}
 	
 	if( kbfd < 0 ) {
+		printf("Error: cannot open game control event device.\n");
+		return -1;
+	}
+	if( kpfd < 0 ) {
 		printf("Error: cannot open keyboard event device.\n");
 		return -1;
 	}
@@ -772,7 +782,20 @@ Handler:		switch (event.type)
                         }
                 }
 #else /* ifndef FB_RENDER */
-		kbrd = read(kbfd, ev, sizeof(struct input_event) * 64);
+		if( paused ) {
+			/* Wait for an event. */
+			do {
+				kbrd = read(kbfd, ev, sizeof(struct input_event) * 64);
+				kprd = read(kpfd, ev, sizeof(struct input_event) * 64);				
+				SDL_Delay(100);
+			} while( kbrd == 0 && kprd == 0 );
+		}
+		else {
+			/* Check for GPIO game control events */
+			kbrd = read(kbfd, ev, sizeof(struct input_event) * 64);
+			/* Same for the keyboard */
+			kprd = read(kpfd, ev, sizeof(struct input_event) * 64);
+		}
 
 		if (kbrd >= (int) sizeof(struct input_event)) {
 			for( i = 0; i < kbrd / sizeof(struct input_event); i++ ) {
@@ -788,13 +811,20 @@ Handler:		switch (event.type)
 							case KEY_END:		MastInput[0]&=0xdf; break;
 							case KEY_LEFTALT:	MastInput[0]&=0x3f; break;
 							case KEY_RIGHTSHIFT:
-								done = 1;
+							case KEY_RIGHTCTRL:
+								shift = 0;
+								break;
+							case KEY_MENU:
+								if( paused )
+									done = 1;
+								else
+									paused = 1;
 								break;
 							default:
 								break;
 						}
 					}
-					else {
+					else if( ev[i].value == 1 ) {
 						// Key down
 						switch( ev[i].code ) {
 							case KEY_UP:		MastInput[0]|=0x01; break;
@@ -803,17 +833,92 @@ Handler:		switch (event.type)
 							case KEY_RIGHT:		MastInput[0]|=0x08; break;
 							case KEY_PAGEDOWN:	MastInput[0]|=0x10; break;
 							case KEY_END:		MastInput[0]|=0x20; break;
+							case KEY_RIGHTSHIFT:
+							case KEY_RIGHTCTRL:
+								shift = ev[i].code;
+								break;
 							case KEY_LEFTALT:
 								MastInput[0]|=0x80;
 								if ((MastEx&MX_GG)==0)
 									MastInput[0]|=0x40;
 								break;
-							case KEY_RIGHTSHIFT:
-								/* Wait for key up to exit... */
+							default:
+								break;
+						}
+						if( ev[i].code != KEY_MENU ) {
+							paused = 0;	
+						}
+					}
+				}	
+			}
+		}
+
+		if (kprd >= (int) sizeof(struct input_event)) {
+			paused = 0;
+			for( i = 0; i < kprd / sizeof(struct input_event); i++ ) {
+				if ( ev[i].type == 1 && !(ev[i].code == MSC_RAW || ev[i].code == MSC_SCAN) ) {
+					if( ev[i].value == 0 ) {
+						// Key up
+						switch( ev[i].code ) {
+							case KEY_0:
+							case KEY_1:
+							case KEY_2:
+							case KEY_3:
+							case KEY_4:
+							case KEY_5:
+							case KEY_6:
+							case KEY_7:
+							case KEY_8:
+							case KEY_9:
+								if( shift ) {
+									/* Load or save state... */
+									char sname[ROM_NAME_LEN+2];
+									char *basename = NULL;
+									char number = 'x';
+									
+									switch( ev[i].code ) {
+										case KEY_0: number = '0'; break;
+										case KEY_1: number = '1'; break;
+										case KEY_2: number = '2'; break;
+										case KEY_3: number = '3'; break;
+										case KEY_4: number = '4'; break;
+										case KEY_5: number = '5'; break;
+										case KEY_6: number = '6'; break;
+										case KEY_7: number = '7'; break;
+										case KEY_8: number = '8'; break;
+										case KEY_9: number = '9'; break;
+									}
+									
+									basename = strrchr( rom_name, '/' );
+									if( basename == NULL ) {
+										basename = rom_name;
+									}
+									else {
+										basename++; /* Point past last slash. */
+									}
+									
+									snprintf( sname, ROM_NAME_LEN+2, "%s.%c", basename, number );
+									
+									if( shift == KEY_RIGHTSHIFT ) {
+										if( StateLoad( sname ) == 0 ) {
+											/* Some feedback for now... a message would be better. */
+											SDL_Delay(250);											
+										}
+									}
+									else if( shift == KEY_RIGHTCTRL ) {
+										if( StateSave( sname ) == 0 ) {
+											/* Some feedback for now... a message would be better. */
+											SDL_Delay(250);											
+										}
+									}
+								}
 								break;
 							default:
 								break;
 						}
+					}
+					else if( ev[i].value == 1 ) {
+						// Key down
 					}
 				}	
 			}
@@ -836,6 +941,8 @@ Handler:		switch (event.type)
 #ifdef FB_RENDER
 	munmap(fbp1, screensize);
 	close(fbfd);
+	close(kbfd);
+	close(kpfd);
 #endif
 
 	return 0;
