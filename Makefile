@@ -37,7 +37,7 @@ else
 endif
 
 ifeq ($(P),unix)
-	CFLAGS= $(OPTFLAGS) $(shell $(PREFIX)/bin/sdl-config --cflags) -DUSE_MENCODER -Imast -Idoze -Ilibmencoder -D__cdecl= -D__fastcall=
+	CFLAGS= $(OPTFLAGS) $(shell $(PREFIX)/bin/sdl-config --cflags) -I$(PREFIX)/include -DUSE_MENCODER -Imast -Idoze -Ilibmencoder -D__cdecl= -D__fastcall=
 else ifeq ($(P),win)
 	CFLAGS= $(OPTFLAGS) -DUSE_VFW -mno-cygwin -Imast -Idoze -Imaster -Iextra -Izlib -Ilibvfw
 endif
@@ -69,7 +69,7 @@ endif
 CXXFLAGS= $(CFLAGS) -fno-exceptions
 
 DAMOBJ = doze/dam.o doze/dama.o doze/damc.o doze/dame.o doze/damf.o doze/damj.o doze/damm.o doze/damo.o doze/damt.o
-MASTOBJ = mast/area.o mast/dpsg.o mast/draw.o mast/emu2413.o mast/frame.o mast/load.o mast/map.o mast/mast.o mast/mem.o mast/samp.o mast/snd.o mast/vgm.o mast/video.o mast/osd.o mast/md5.o
+MASTOBJ = mast/area.o mast/dpsg.o mast/draw.o mast/emu2413.o mast/frame.o mast/load.o mast/map.o mast/mast.o mast/mem.o mast/samp.o mast/snd.o mast/vgm.o mast/video.o mast/osd.o mast/md5.o mast/unzip.o mast/zipfn.o
 ifdef $(NOPYTHON)
 PYOBJ = python/pydega.o python/stdalone.o
 PYEMBOBJ = python/pydega.emb.o python/embed.emb.o
@@ -96,7 +96,7 @@ endif
 	PLATOBJ = sdl/main.o sdl/font.o
 	PLATPYOBJ =
 	PLATPYOBJCXX =
-	EXTRA_LIBS = $(shell $(PREFIX)/bin/sdl-config --libs) -lm -lts
+	EXTRA_LIBS = $(shell $(PREFIX)/bin/sdl-config --libs) -lm -lts -lz
 	DOZE_FIXUP = sed -f doze/doze.cmd.sed <doze/dozea.asm >doze/dozea.asm.new && mv doze/dozea.asm.new doze/dozea.asm
 ifndef NOMOVIE
 	ENCODER_OBJ = tools/degavi.o
@@ -241,6 +241,7 @@ distclean: clean
 pnd: dega.pnd
 
 dega.pnd: $(PND_FILES)
+	rm -rf pnd
 	mkdir -p pnd
 	cp -f $(PND_FILES) pnd/
 	rm -f dega.squash
