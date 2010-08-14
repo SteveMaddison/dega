@@ -7,7 +7,7 @@ NOPYTHON=1
 NOMOVIE=1
 Z80=z80jb
 #DEBUG=1
-PND_FILES = dega dega.png dega.sh dega.txt PXML.xml video.sh
+PND_FILES = dega dega.png dega.sh dega.txt ggsms.default PXML.xml video.sh
 
 #OPTFLAGS=-O3 -fomit-frame-pointer -funroll-loops -march=i686 -mcpu=i686
 #OPTFLAGS=-xM -O3

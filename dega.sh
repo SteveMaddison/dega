@@ -26,6 +26,11 @@ if [ -f videorc ] ; then
 	. videorc
 fi
 
+# Copy default list of GG games which run in SMS mode if not already present.
+if [ ! -f ggsms ] ; then
+	cp ggsms.default ggsms
+fi
+
 # Identify the ROM and set frame buffer stuff to scale accordingly.
 if [ `./dega -i "$ROM"` = "GG" ]; then
 	case "$STRETCH" in
