@@ -458,6 +458,7 @@ int main(int argc, char** argv)
 	SDL_AudioSpec aspec;
 	unsigned char* audiobuf = NULL;
 	int paused=0, frameadvance=0;
+	int smsgg_hack = 0;
 
 #ifndef FB_RENDER
 	SDL_Event event;
@@ -577,11 +578,18 @@ int main(int argc, char** argv)
 #endif
 	
 	MastInit();
-	MastLoadRom( rom_name, &rom, &romlength);
+	if( MastLoadRom( rom_name, &rom, &romlength ) == -1 ) {
+		smsgg_hack = 1;
+	}
 	MastSetRom(rom,romlength);
 	if (autodetect)
 		MastFlagsFromHeader();
-		
+	
+	if( smsgg_hack ) {
+		// Force SMS mode, even though game is identified as GG.
+		MastEx &= ~MX_GG;
+	}
+	
 	if( identify ) {
 		printf("%s\n", MastEx&MX_GG ? "GG" : "SMS" );
 		SDL_Quit();

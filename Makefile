@@ -96,7 +96,7 @@ endif
 	PLATOBJ = sdl/main.o sdl/font.o
 	PLATPYOBJ =
 	PLATPYOBJCXX =
-	EXTRA_LIBS = $(shell $(PREFIX)/bin/sdl-config --libs) -lm -lts -lz
+	EXTRA_LIBS = $(shell $(PREFIX)/bin/sdl-config --libs) -lm -lts -lz -lssl
 	DOZE_FIXUP = sed -f doze/doze.cmd.sed <doze/dozea.asm >doze/dozea.asm.new && mv doze/dozea.asm.new doze/dozea.asm
 ifndef NOMOVIE
 	ENCODER_OBJ = tools/degavi.o
